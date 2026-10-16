@@ -5,12 +5,15 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import { money } from "../services/format";
 import { getPrefs } from "../services/prefs";
+import { BRAND } from "../services/format";
 
 export const PAGE_TITLES = {
   "/dashboard": "Dashboard", "/payment-card": "Payment Card", "/payment": "New Payment", "/model-demo": "PCA Model Demo",
   "/alerts": "Fraud Alerts", "/history": "Transaction History", "/profile": "Profile", "/settings": "Settings", "/about": "About",
+  "/investigations": "Investigation Centre", "/scamwatch": "ScamWatch", "/security": "Security Monitor", "/inventory": "Inventory & Orders",
+  "/reports": "Reports & Business Impact", "/users": "Users & Roles", "/audit": "Audit Trail", "/integrations": "Model & Integrations",
 };
-export const titleFor = path => PAGE_TITLES[path] || (path.startsWith("/transactions/") ? "Transaction Details" : "Shoprite FraudGuard");
+export const titleFor = path => PAGE_TITLES[path] || (path.startsWith("/transactions/") ? "Transaction Details" : BRAND);
 
 function useOutsideClose(ref, onClose) {
   useEffect(() => {
@@ -82,8 +85,8 @@ export default function Topbar({ onMenuClick }) {
   }
   return <header className="topbar">
     <button className="mobile-menu" onClick={onMenuClick} aria-label="Open navigation"><Menu size={23}/></button>
-    <div className="topbar-brand"><ShieldCheck size={29}/><strong>Shoprite <span>FraudGuard</span></strong></div>
-    <div className="topbar-title"><small>Shoprite FraudGuard</small><strong>{titleFor(pathname)}</strong></div>
+    <div className="topbar-brand"><ShieldCheck size={29}/><strong>{BRAND} <span>Console</span></strong></div>
+    <div className="topbar-title"><small>{BRAND} staff console</small><strong>{titleFor(pathname)}</strong></div>
     <form className="topbar-search" role="search" onSubmit={search}>
       <Search size={15} aria-hidden="true"/><input aria-label="Search transactions by reference" placeholder="Search reference…" maxLength={40}
         value={q} onChange={e => setQ(e.target.value)}/></form>

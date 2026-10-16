@@ -5,5 +5,7 @@ import { cleanup } from "@testing-library/react";
 // jsdom has no ResizeObserver (Recharts needs one).
 globalThis.ResizeObserver = globalThis.ResizeObserver || class { observe() {} unobserve() {} disconnect() {} };
 
+window.scrollTo = window.scrollTo || (() => {});
+
 beforeEach(() => { try { localStorage.clear(); } catch { /* storage unavailable */ } });
 afterEach(() => cleanup());

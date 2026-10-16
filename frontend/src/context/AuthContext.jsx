@@ -1,12 +1,15 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../services/supabase";
-import { setUnauthorizedHandler } from "../services/api";
+import { api, setUnauthorizedHandler } from "../services/api";
+import { clearLocalSession, getLocalSession, setLocalSession } from "../services/session";
+import { STAFF_ROLES } from "../services/format";
 
 const Context = createContext(null);
 const NOT_CONFIGURED = "Supabase is not configured. Copy frontend/.env.example to frontend/.env and add your project URL and anon key.";
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  // Without Supabase, a local DEMO session (if any) is restored from this tab's sessionStorage.
+  const [user, setUser] = useState(() => (supabase ? null : getLocalSession()?.user || null));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,6 +26,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
+      clearLocalSession();
       if (supabase) supabase.auth.signOut().catch(() => {});
       setUser(null);
     });
@@ -39,6 +43,16 @@ export function AuthProvider({ children }) {
     setUser(data.user);
   }
 
+  /** Local DEMONSTRATION sign-in (backend LOCAL_AUTH_ENABLED=true). Not a production login. */
+  async function loginLocal(email, password) {
+    const d = await api.localLogin(email, password);
+    const profile = { id: d.user.id, email: d.user.email, user_metadata: { full_name: d.user.full_name },
+                      app_metadata: { role: d.user.role } };
+    setLocalSession({ token: d.access_token, user: profile });
+    setUser(profile);
+    return profile;
+  }
+
   async function register(email, password, fullName) {
     if (!supabase) throw new Error(NOT_CONFIGURED);
     const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
@@ -47,6 +61,7 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    clearLocalSession();
     if (supabase) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
@@ -76,8 +91,9 @@ export function AuthProvider({ children }) {
   // Display only. The API decides what this user may do, from the verified token.
   const role = user?.app_metadata?.role || "customer";
   const configured = Boolean(supabase);
+  const isStaff = STAFF_ROLES.includes(role);
 
-  return <Context.Provider value={{ user, loading, role, configured, login, register, logout, requestPasswordReset, updatePassword, updateProfile }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ user, loading, role, isStaff, configured, login, loginLocal, register, logout, requestPasswordReset, updatePassword, updateProfile }}>{children}</Context.Provider>;
 }
 
 export function useAuth() { return useContext(Context); }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { ShieldCheck, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { BRAND } from "../services/format";
 import { EMAIL_RE, Field, PASSWORD_RULES, PasswordInput, passwordOk } from "../components/forms";
 
 export default function Register() {
@@ -34,8 +35,8 @@ export default function Register() {
   }
 
   return <div className="auth-page">
-    <section className="auth-art"><div className="auth-logo"><ShieldCheck size={36}/><div>Shoprite <span>FraudGuard</span><small>Smart Payment Security. Real-Time Fraud Risk Analysis.</small></div></div>
-      <div className="auth-copy"><h1>Create Your Account</h1><p>Join Shoprite FraudGuard and monitor transaction risk in this educational project.</p></div>
+    <section className="auth-art"><div className="auth-logo"><ShieldCheck size={36}/><div>{BRAND} <span>Console</span><small>Smart Payment Security. Real-Time Fraud Risk Analysis.</small></div></div>
+      <div className="auth-copy"><h1>Create Your Account</h1><p>Join the FraudGuard demonstration and monitor transaction risk in this educational project.</p></div>
       <div className="auth-features"><span><ShieldCheck size={19}/> Real model status</span><span><LockKeyhole size={19}/> Authenticated access</span><span><UserRound size={19}/> Your account</span></div>
     </section>
     <section className="auth-form-side"><form className="auth-card" onSubmit={submit} noValidate>

@@ -34,10 +34,16 @@ describe("protected routes", () => {
     at("/history", <App/>);
     expect(screen.getByRole("heading", { name: "Login" })).toBeInTheDocument();
   });
-  it("shows a 404 page for unknown routes inside the app", () => {
-    auth.value = { ...base, user: { id: "1", email: "a@b.co" } };
+  it("shows a 404 page for unknown routes inside the staff console", () => {
+    auth.value = { ...base, user: { id: "1", email: "a@b.co" }, role: "fraud_analyst" };
     at("/nope/nothing", <App/>);
     expect(screen.getByRole("heading", { name: /404/ })).toBeInTheDocument();
+  });
+  it("sends a signed-in customer away from the staff console to the store", async () => {
+    auth.value = { ...base, user: { id: "1", email: "a@b.co" }, role: "customer" };
+    at("/dashboard", <App/>);
+    expect(await screen.findByRole("heading", { name: /fresh groceries/i })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /^dashboard/i })).not.toBeInTheDocument();
   });
   it("NotFound links back to the dashboard", () => {
     at("/x", <NotFound/>);

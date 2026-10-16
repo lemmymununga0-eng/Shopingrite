@@ -5,10 +5,10 @@ const FLOW = ["Labelled data", "Preprocessing", "Random Forest training", "Evalu
 
 export default function About() {
   return <div>
-    <PageHeader title="About Shoprite FraudGuard" subtitle="Smart Payment Security. Real-Time Fraud Risk Analysis."/>
+    <PageHeader title="About FraudGuard" subtitle="Smart Payment Security. Real-Time Fraud Risk Analysis."/>
     <div className="content-stack">
       <section className="panel"><h2><ShieldCheck size={19}/> Project overview</h2>
-        <p className="muted-text">Shoprite FraudGuard is a university project that shows how a machine-learning model can estimate the risk that a payment transaction is fraudulent and how analysts can review flagged cases. It is an independent educational prototype. It is not an official Shoprite product, is not endorsed by Shoprite, and does not process real payments.</p></section>
+        <p className="muted-text">FraudGuard is a university project that shows how a machine-learning model can estimate the risk that a payment transaction is fraudulent and how analysts can review flagged cases. It is an independent educational prototype. It is not an official Shoprite product, is not endorsed by Shoprite, and does not process real payments.</p></section>
       <section className="panel"><h2><Target size={19}/> Problem and objectives</h2>
         <p className="muted-text">Card fraud is rare but costly, and reviewing every payment by hand is impossible. The project aims to:</p>
         <ul><li>score each submitted transaction with a Random Forest model;</li><li>flag high-risk transactions as alerts instead of hiding them in a long list;</li>

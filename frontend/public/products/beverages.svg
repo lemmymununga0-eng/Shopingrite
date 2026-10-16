@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="beverages">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c5f6fa"/><stop offset="1" stop-color="#ffffff"/></linearGradient></defs>
+<rect width="400" height="300" fill="url(#g)"/><circle cx="330" cy="50" r="90" fill="#0b7285" opacity=".08"/><circle cx="60" cy="270" r="110" fill="#0b7285" opacity=".08"/>
+<text x="200" y="185" font-size="120" text-anchor="middle">🥤</text></svg>
