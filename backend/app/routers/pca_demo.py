@@ -8,7 +8,7 @@ import math
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict
 
-from ..auth import User, current_user
+from ..auth import User, require
 from ..dependencies import predict_rate_limit
 from ..ml import pca_demo
 
@@ -25,7 +25,7 @@ def _model(request: Request):
 
 
 @router.get("/info")
-def info(request: Request, user: User = Depends(current_user)):
+def info(request: Request, user: User = Depends(require("fraud.view"))):
     m = _model(request)
     base = {"label": "Kaggle PCA dataset demonstration (separate from the payment form)", "features": pca_demo.FEATURES}
     if not m.available:
@@ -37,7 +37,8 @@ def info(request: Request, user: User = Depends(current_user)):
 
 
 @router.post("/predict")
-def predict(body: PcaRequest, request: Request, user: User = Depends(predict_rate_limit)):
+def predict(body: PcaRequest, request: Request, user: User = Depends(predict_rate_limit),
+            _allowed: User = Depends(require("fraud.predict"))):
     m = _model(request)
     if not m.available:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"PCA demo model unavailable: {m.error}")

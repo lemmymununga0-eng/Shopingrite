@@ -22,8 +22,9 @@ class Prediction:
 
 
 class Predictor:
-    def __init__(self, high: float = 0.7, medium: float = 0.3):
+    def __init__(self, high: float = 0.7, medium: float = 0.3, threshold: float | None = None):
         self.high, self.medium = high, medium
+        self.threshold_override = threshold          # MODEL_THRESHOLD; None = use the threshold stored in the artifact
         self.pipeline = None
         self.metadata = None
         self.error = "No model loaded"
@@ -50,6 +51,12 @@ class Predictor:
             return
         self.pipeline, self.metadata, self.error = pipe, meta, ""
 
+    @property
+    def threshold(self) -> float:
+        if self.threshold_override is not None:
+            return float(self.threshold_override)
+        return float((self.metadata or {}).get("threshold", 0.5))
+
     def risk_level(self, p: float) -> str:
         return "High" if p >= self.high else "Medium" if p >= self.medium else "Low"
 
@@ -60,7 +67,7 @@ class Predictor:
         p = float(self.pipeline.predict_proba(row)[0][list(self.pipeline.classes_).index(1)])
         return Prediction(
             probability=p,
-            is_fraud=p >= float(self.metadata.get("threshold", 0.5)),
+            is_fraud=p >= self.threshold,
             risk=self.risk_level(p),
             model_version=self.metadata["version"],
             contributing_factors=self.rule_based_factors(features),

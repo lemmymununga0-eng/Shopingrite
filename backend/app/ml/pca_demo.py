@@ -111,7 +111,8 @@ def save(pipe, meta: dict, path: Path = DEFAULT_PATH) -> Path:
 
 
 class PcaPredictor:
-    def __init__(self):
+    def __init__(self, high: float = 0.7, medium: float = 0.3, threshold: float | None = None):
+        self.high, self.medium, self.threshold_override = high, medium, threshold
         self.pipeline, self.metadata, self.error = None, None, "PCA demo model not loaded"
 
     @property
@@ -136,7 +137,7 @@ class PcaPredictor:
     def predict(self, features: dict) -> dict:
         row = pd.DataFrame([{k: features[k] for k in FEATURES}])[FEATURES]
         p = float(self.pipeline.predict_proba(row)[0][list(self.pipeline.classes_).index(1)])
-        thr = float(self.metadata["threshold"])
+        thr = float(self.threshold_override if self.threshold_override is not None else self.metadata["threshold"])
         return {"prediction": int(p >= thr), "fraud_probability": round(p, 6),
-                "risk_level": "High" if p >= 0.7 else "Medium" if p >= 0.3 else "Low",
+                "risk_level": "High" if p >= self.high else "Medium" if p >= self.medium else "Low",
                 "threshold": thr, "model_version": self.metadata["version"]}

@@ -82,7 +82,7 @@ class SqliteRepository:
 
     @staticmethod
     def _scope(user: User):
-        return ("1=1", []) if user.can_review else ("user_id = ?", [user.id])
+        return ("1=1", []) if user.can_view_all else ("user_id = ?", [user.id])
 
     def create_transaction(self, user: User, record: dict) -> dict:
         row = {

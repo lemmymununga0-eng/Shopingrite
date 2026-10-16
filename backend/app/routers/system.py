@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 
-from ..auth import User, current_user
+from ..auth import User, require
 from ..dependencies import get_predictor
 from ..ml import feature_schema as fs
 from ..ml.predict import Predictor
@@ -17,11 +17,14 @@ def health(request: Request, predictor: Predictor = Depends(get_predictor)):
         "mode": "REAL_MODEL" if predictor.available else "MODEL_UNAVAILABLE",
         "db_backend": s.db_backend,
         "auth_configured": bool(s.supabase_jwt_secret or s.supabase_url),
+        "local_auth_enabled": s.local_auth_enabled,
+        "app_database": "ok" if request.app.state.db.ping() else "unavailable",
+        "environment": s.environment,
     }
 
 
 @router.get("/model-info", tags=["system"])
-def model_info(request: Request, predictor: Predictor = Depends(get_predictor), user: User = Depends(current_user)):
+def model_info(request: Request, predictor: Predictor = Depends(get_predictor), user: User = Depends(require("settings.view"))):
     s = request.app.state.settings
     base = {"features": fs.FEATURES, "risk_bands": {"high": s.risk_high, "medium": s.risk_medium}}
     if not predictor.available:

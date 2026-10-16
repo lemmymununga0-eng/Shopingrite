@@ -3,12 +3,13 @@ import uuid
 from datetime import date, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from ..auth import User, current_user, require_reviewer
+from ..auth import User, require, require_reviewer
 from ..db.base import ListFilters, Repository, RepositoryError
-from ..dependencies import get_predictor, get_repo, predict_rate_limit
+from ..dependencies import correlation, get_predictor, get_repo, predict_rate_limit
 from ..ml.predict import ModelUnavailable, Predictor
+from ..services.investigation_service import SIGNAL_NOTE, ensure_case
 from ..schemas.transactions import AlertReview, Page, PredictRequest, PredictResponse, Stats, TransactionOut
 
 log = logging.getLogger("fraudguard")
@@ -64,7 +65,8 @@ PageSize = Annotated[int, Query(ge=1, le=100)]
 
 
 @router.post("/predict", response_model=PredictResponse, status_code=201, tags=["predict"])
-def predict(payload: PredictRequest, user: User = Depends(predict_rate_limit),
+def predict(payload: PredictRequest, request: Request, user: User = Depends(predict_rate_limit),
+            _allowed: User = Depends(require("fraud.predict")),
             predictor: Predictor = Depends(get_predictor), repo: Repository = Depends(get_repo)):
     features = {
         "amount": payload.amount, "hour": payload.hour, "failed_attempts": payload.failed_attempts,
@@ -75,6 +77,9 @@ def predict(payload: PredictRequest, user: User = Depends(predict_rate_limit),
     try:
         result = predictor.predict(features)
     except ModelUnavailable as exc:
+        request.app.state.events.record("high", "model", "model.unavailable", f"Prediction requested but the model is unavailable: {exc}",
+                                        actor_id=user.id, path=request.url.path, method="POST", status_code=503,
+                                        correlation_id=correlation(request), dedupe=True)
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"Model unavailable: {exc}")
     record = {
         "transaction_reference": payload.transaction_reference, **features,
@@ -88,6 +93,17 @@ def predict(payload: PredictRequest, user: User = Depends(predict_rate_limit),
         saved = repo.create_transaction(user, record)
     except RepositoryError as exc:
         raise _db_error(exc)
+    if saved["is_flagged"]:
+        # A high score is a signal that opens a case for a person to review. It is not a finding of fraud.
+        try:
+            with request.app.state.db.session() as session:
+                ensure_case(session, source_type="fraud_prediction", source_record_id=saved["id"],
+                            severity={"High": "high", "Medium": "medium"}.get(saved["risk"], "low"),
+                            summary=(f"Model score {saved['probability']:.2f} ({saved['risk']} risk) for transaction "
+                                     f"{saved['transaction_reference']}. {SIGNAL_NOTE}"),
+                            evidence_reference=f"transaction:{saved['id']}", correlation_id=correlation(request))
+        except Exception:
+            log.exception("could not open an investigation case for a flagged prediction")
     return PredictResponse(transaction=saved)
 
 
@@ -96,7 +112,7 @@ def list_transactions(search: Search = None, risk: str | None = None, review_sta
                       payment_method: str | None = None, date_from: str | None = None, date_to: str | None = None,
                       sort_by: str = "created_at", sort_dir: str = "desc",
                       page: PageNo = 1, page_size: PageSize = 20,
-                      user: User = Depends(current_user), repo: Repository = Depends(get_repo)):
+                      user: User = Depends(require("fraud.view")), repo: Repository = Depends(get_repo)):
     f = _filters(search, risk, review_status, page, page_size, False, payment_method, date_from, date_to, sort_by, sort_dir)
     try:
         items, total = repo.list_transactions(user, f)
@@ -107,7 +123,7 @@ def list_transactions(search: Search = None, risk: str | None = None, review_sta
 
 @router.get("/transactions/stats", response_model=Stats, tags=["transactions"])
 def stats(days: Annotated[int | None, Query(ge=1, le=365)] = None,
-          user: User = Depends(current_user), repo: Repository = Depends(get_repo)):
+          user: User = Depends(require("fraud.view")), repo: Repository = Depends(get_repo)):
     try:
         return repo.stats(user, days)
     except RepositoryError as exc:
@@ -115,7 +131,7 @@ def stats(days: Annotated[int | None, Query(ge=1, le=365)] = None,
 
 
 @router.get("/transactions/{transaction_id}", response_model=TransactionOut, tags=["transactions"])
-def get_transaction(transaction_id: str, user: User = Depends(current_user), repo: Repository = Depends(get_repo)):
+def get_transaction(transaction_id: str, user: User = Depends(require("fraud.view")), repo: Repository = Depends(get_repo)):
     try:
         item = repo.get_transaction(user, _valid_id(transaction_id))
     except RepositoryError as exc:
@@ -130,7 +146,7 @@ def list_alerts(search: Search = None, risk: str | None = None, review_status: s
                 date_from: str | None = None, date_to: str | None = None,
                 sort_by: str = "created_at", sort_dir: str = "desc",
                 page: PageNo = 1, page_size: PageSize = 20,
-                user: User = Depends(current_user), repo: Repository = Depends(get_repo)):
+                user: User = Depends(require("fraud.view")), repo: Repository = Depends(get_repo)):
     f = _filters(search, risk, review_status, page, page_size, True, None, date_from, date_to, sort_by, sort_dir)
     try:
         items, total = repo.list_transactions(user, f)

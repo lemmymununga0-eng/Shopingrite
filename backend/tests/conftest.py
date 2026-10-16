@@ -16,14 +16,14 @@ from app.ml.train_model import save_artifact, train
 SECRET = "test-secret-test-secret-test-secret-123"
 
 
-def make_token(sub="user-a", role=None, secret=SECRET, exp_in=3600, aud="authenticated"):
+def make_token(sub="user-a", role="fraud_analyst", secret=SECRET, exp_in=3600, aud="authenticated"):
     claims = {"sub": sub, "aud": aud, "exp": int(time.time()) + exp_in, "email": f"{sub}@example.com"}
     if role:
         claims["app_metadata"] = {"role": role}
     return jwt.encode(claims, secret, algorithm="HS256")
 
 
-def auth(sub="user-a", role=None, **kw):
+def auth(sub="user-a", role="fraud_analyst", **kw):
     return {"Authorization": f"Bearer {make_token(sub, role, **kw)}"}
 
 

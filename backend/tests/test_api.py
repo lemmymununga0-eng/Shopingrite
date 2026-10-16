@@ -128,19 +128,19 @@ def test_body_size_limit(client):
 
 
 # ---------- ownership ----------
-def test_ownership_isolation(client):
-    t = client.post("/predict", json=valid_payload(**RISKY), headers=auth("alice")).json()["transaction"]
-    assert client.get(f"/transactions/{t['id']}", headers=auth("bob")).status_code == 404
-    assert client.get("/transactions", headers=auth("bob")).json()["total"] == 0
-    assert client.get("/alerts", headers=auth("bob")).json()["total"] == 0
-    assert client.get("/transactions", headers=auth("alice")).json()["total"] == 1
-    assert client.get("/transactions/stats", headers=auth("bob")).json()["total_transactions"] == 0
+def test_customers_cannot_use_fraud_console_endpoints(client):
+    """Customers belong to the store only: the fraud console API is staff-only (enforced on the server)."""
+    cust = auth("alice", "customer")
+    assert client.post("/predict", json=valid_payload(**RISKY), headers=cust).status_code == 403
+    for path in ("/transactions", "/alerts", "/transactions/stats", "/model-info", "/pca-demo/info"):
+        assert client.get(path, headers=cust).status_code == 403, path
 
 
-def test_reviewer_sees_all(client):
+def test_staff_see_all_predictions(client):
     client.post("/predict", json=valid_payload(), headers=auth("alice"))
     client.post("/predict", json=valid_payload(transaction_reference="TX-2"), headers=auth("bob"))
-    assert client.get("/transactions", headers=auth("ann", "analyst")).json()["total"] == 2
+    assert client.get("/transactions", headers=auth("ann", "analyst")).json()["total"] == 2   # legacy role name still works
+    assert client.get("/transactions", headers=auth("sam", "security_analyst")).json()["total"] == 2
 
 
 def test_forged_role_in_user_metadata_ignored(client):
@@ -202,8 +202,10 @@ def test_alert_review_persists(client):
 
 def test_customer_cannot_review(client):
     t = _make_alert(client)
-    r = client.patch(f"/alerts/{t['id']}", json={"status": "false_positive"}, headers=auth("alice"))
+    r = client.patch(f"/alerts/{t['id']}", json={"status": "false_positive"}, headers=auth("alice", "customer"))
     assert r.status_code == 403
+    r2 = client.patch(f"/alerts/{t['id']}", json={"status": "false_positive"}, headers=auth("sam", "security_analyst"))
+    assert r2.status_code == 403          # security analysts view alerts but do not review fraud
     assert client.patch(f"/alerts/{t['id']}", json={"status": "false_positive"}).status_code == 401
 
 
