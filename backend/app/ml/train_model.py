@@ -113,7 +113,7 @@ def write_report(name: str, meta: dict):
         f"Model {meta['version']}  ({meta['model_type']})", f"Data source: {meta['data_source']}",
         f"Rows used: {meta['n_rows']}  fraud: {meta['n_fraud']}  test rows: {m['test_rows']} "
         f"(legit {m['support_legitimate']}, fraud {m['support_fraud']})",
-        f"Threshold: {m['threshold']}", f"Accuracy {_fmt(m['accuracy'])} (misleading when fraud is rare)",
+        f"Fraud prevalence in held-out set: {m['fraud_prevalence']:.2%}", f"Threshold: {m['threshold']}", f"Accuracy {_fmt(m['accuracy'])} (misleading when fraud is rare)",
         f"Precision {_fmt(m['precision'])}  Recall {_fmt(m['recall'])}  F1 {_fmt(m['f1'])}",
         f"PR-AUC {_fmt(m['pr_auc'])}  ROC-AUC {_fmt(m['roc_auc'])}",
         f"Confusion matrix: TN {cm['tn']}  FP {cm['fp']}  FN {cm['fn']}  TP {cm['tp']}",
@@ -134,6 +134,9 @@ def main(argv=None):
     src.add_argument("--synthetic", action="store_true", help="payment schema only: generate the synthetic development dataset")
     src.add_argument("--csv", type=Path, help="path to a CSV (pca default: data/creditcard.csv)")
     ap.add_argument("--rows", type=int, default=20000)
+    ap.add_argument("--threshold", type=float, default=None,
+                    help="decision threshold stored with the model (0-1). Default: 0.3 payment model, 0.5 PCA model. "
+                         "It can be overridden later without retraining via MODEL_THRESHOLD.")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args(argv)
 
@@ -149,7 +152,7 @@ def main(argv=None):
                   "(see backend/data/README.md), or run: python scripts/download_kaggle.py")
             return 1
         try:
-            pipe, meta = pca_demo.train(pd.read_csv(csv), str(csv))
+            pipe, meta = pca_demo.train(pd.read_csv(csv), str(csv), threshold=args.threshold)
         except (ValueError, pd.errors.ParserError) as exc:
             print(f"ERROR: {exc}")
             return 1
@@ -172,7 +175,7 @@ def main(argv=None):
         print("ERROR: choose --synthetic or --csv PATH for the payment schema.")
         return 1
     try:
-        pipe, meta = train(df, source, synth)
+        pipe, meta = train(df, source, synth, **({} if args.threshold is None else {"threshold": args.threshold}))
     except ValueError as exc:
         print(f"ERROR: {exc}")
         return 1

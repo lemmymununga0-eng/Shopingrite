@@ -57,7 +57,7 @@ export function ProductCard({ product }) {
       <Price product={product}/>
       <StockBadge product={product}/>
       <button type="button" className="shop-btn" disabled={out || busy} onClick={() => add(product, 1)}
-        aria-label={out ? `${product.name} is out of stock` : `Add ${product.name} to cart`}>
+        aria-label={out ? `Unavailable: ${product.name} is out of stock` : `Add to cart: ${product.name}`}>
         <ShoppingCart size={16} aria-hidden="true"/> {out ? "Unavailable" : busy ? "Adding…" : "Add to cart"}</button>
       <p className="status-line" role="status" aria-live="polite">{message}</p>
       {error && <p className="field-error" role="alert">{error}</p>}
@@ -67,7 +67,7 @@ export function ProductCard({ product }) {
 
 export function QuantityInput({ id, value, onChange, max, min = 1, label = "Quantity" }) {
   const clamp = n => Math.max(min, Math.min(max ?? 1000, n));
-  return <div className="qty" role="group" aria-label={label}>
+  return <div className="qty" role="group" aria-label={`${label} selector`}>
     <button type="button" aria-label="Decrease quantity" onClick={() => onChange(clamp(value - 1))} disabled={value <= min}>−</button>
     <input id={id} type="number" inputMode="numeric" min={min} max={max} value={value} aria-label={label}
       onChange={e => { const n = Number(e.target.value); if (Number.isFinite(n) && n >= 0) onChange(Math.floor(n)); }}/>

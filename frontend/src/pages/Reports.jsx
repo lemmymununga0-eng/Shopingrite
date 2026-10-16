@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import { moneyC, pct } from "../services/format";
 
-const Metric = ({ label, value, note }) => <div className="metric"><dt>{label}</dt><dd>{value ?? "—"}</dd>{note && <small>{note}</small>}</div>;
+const Metric = ({ label, value, note }) => <div className="metric"><dt>{label}</dt><dd>{value ?? "—"}{note && <small>{note}</small>}</dd></div>;
 const kv = o => Object.entries(o || {}).map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`).join(" · ") || "none";
 
 export default function Reports() {

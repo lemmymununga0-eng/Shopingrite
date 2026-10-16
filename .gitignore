@@ -39,3 +39,6 @@ backend/data/local_auth_secret.txt
 *.db-shm
 frontend/test-results/
 frontend/playwright-report/
+backend/data/e2e/
+frontend/e2e/.backend.pid
+backend/models/*.bak*

@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     # --- ScamWatch providers (comma-separated names). "heuristic" is offline; "safebrowsing" needs a key ---
     scamwatch_providers: str = "heuristic"
     safe_browsing_api_key: str = ""
+    # Test/demo only ("mock" provider): "bad.example=malicious,iffy.example=suspicious". Ignored in production.
+    scamwatch_mock_verdicts: str = ""
     # Brand names whose look-alike domains the offline heuristic should flag, and the domains that are genuine.
     scamwatch_protected_brands: str = "shoprite"
     scamwatch_official_domains: str = "shoprite.co.za,shoprite.co.zm"

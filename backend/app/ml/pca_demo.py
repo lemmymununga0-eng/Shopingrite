@@ -68,7 +68,10 @@ def clean(df: pd.DataFrame):
                                          "rows_after_cleaning": int(len(work))}
 
 
-def train(df: pd.DataFrame, source: str, n_estimators: int = 150):
+def train(df: pd.DataFrame, source: str, n_estimators: int = 150, threshold: float | None = None):
+    threshold = THRESHOLD if threshold is None else float(threshold)
+    if not 0.0 <= threshold <= 1.0:
+        raise DatasetError("threshold must be between 0 and 1")
     work, cleaning = clean(df)
     y = work[TARGET]
     if y.value_counts().min() < 10:
@@ -79,13 +82,13 @@ def train(df: pd.DataFrame, source: str, n_estimators: int = 150):
                                                    class_weight="balanced_subsample", random_state=SEED, n_jobs=-1))])
     pipe.fit(X_tr, y_tr)                    # test split is never used for fitting
     proba = pipe.predict_proba(X_te)[:, list(pipe.classes_).index(1)]
-    metrics = evaluate(y_te, proba, THRESHOLD)
+    metrics = evaluate(y_te, proba, threshold)
     now = datetime.now(timezone.utc)
     meta = {
         "version": now.strftime("pca-%Y%m%d-%H%M%S"), "trained_at": now.isoformat(), "model_type": "RandomForestClassifier",
         "data_source": source, "source_note": SOURCE_NOTE, "features": FEATURES, "target": TARGET,
         "split": {"test_size": 0.2, "stratified": True, "random_state": SEED},
-        "params": pipe.named_steps["rf"].get_params(), "threshold": THRESHOLD, "cleaning": cleaning,
+        "params": pipe.named_steps["rf"].get_params(), "threshold": threshold, "cleaning": cleaning,
         "n_rows": int(len(work)), "n_fraud": int(y.sum()), "metrics": metrics,
     }
     meta["params"] = {k: (v if isinstance(v, (int, float, str, bool, type(None))) else str(v)) for k, v in meta["params"].items()}

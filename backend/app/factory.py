@@ -28,6 +28,45 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 log = logging.getLogger("fraudguard")
 
 
+class BodyLimitMiddleware:
+    """Counts the bytes actually received, so a chunked upload without a Content-Length header cannot get past
+    the limit (the header check in `observe` only catches honest clients). Once the limit is passed the app is
+    shown an empty end of body, and whatever it answers is replaced by 413."""
+
+    def __init__(self, app, max_bytes: int):
+        self.app, self.max_bytes = app, max_bytes
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        total, too_large, replied = 0, False, False
+
+        async def limited_receive():
+            nonlocal total, too_large
+            if too_large:
+                return {"type": "http.request", "body": b"", "more_body": False}
+            message = await receive()
+            if message["type"] == "http.request":
+                total += len(message.get("body", b""))
+                if total > self.max_bytes:
+                    too_large = True
+                    return {"type": "http.request", "body": b"", "more_body": False}
+            return message
+
+        async def replacing_send(message):
+            nonlocal replied
+            if not too_large:
+                return await send(message)
+            if not replied:
+                replied = True
+                body = b'{"detail":"Request body too large"}'
+                await send({"type": "http.response.start", "status": 413,
+                            "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())]})
+                await send({"type": "http.response.body", "body": body})
+
+        await self.app(scope, limited_receive, replacing_send)
+
+
 def build_repo(s: Settings):
     if s.db_backend == "supabase":
         return SupabaseRepository(s.supabase_url, s.supabase_anon_key)
@@ -80,6 +119,7 @@ def create_app(settings: Settings | None = None, repo=None, predictor: Predictor
                   openapi_url="/openapi.json" if s.docs_enabled else None,
                   description="Demonstration retail store and fraud/security console. Payments are simulated; "
                               "no real retailer system is connected.")
+    app.add_middleware(BodyLimitMiddleware, max_bytes=s.max_body_bytes)
     app.add_middleware(CORSMiddleware, allow_origins=s.cors_list, allow_credentials=False,
                        allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
                        allow_headers=["Authorization", "Content-Type", "X-Request-ID"], expose_headers=["X-Request-ID"])

@@ -204,3 +204,21 @@ def test_model_info_reports_effective_threshold_and_bands(settings):
         d = c.get("/model-info", headers=FRAUD()).json()
         assert d["threshold"] == 0.9 and d["risk_bands"]["high"] == 0.7
         assert c.get("/settings/integrations", headers=FRAUD()).json()["payment_model"]["threshold"] == 0.9
+
+
+def test_chunked_upload_without_content_length_is_still_limited(client):
+    """The size limit counts real bytes, so omitting Content-Length cannot bypass it."""
+    def chunks():
+        for _ in range(10):
+            yield b"x" * 5000
+    r = client.post("/predict", content=chunks(), headers={**auth("f", "fraud_analyst"), "Content-Type": "application/json"})
+    assert r.status_code == 413 and r.json()["detail"] == "Request body too large"
+
+
+def test_evaluation_reports_prevalence_and_error_counts():
+    import numpy as np
+    from app.ml.evaluation import evaluate
+    m = evaluate(np.array([0, 0, 0, 1, 1, 0, 0, 0, 0, 0]), np.array([.1, .9, .2, .8, .2, .1, .1, .1, .1, .1]), 0.5)
+    assert m["fraud_prevalence"] == 0.2
+    assert m["confusion_matrix"] == {"tn": 7, "fp": 1, "fn": 1, "tp": 1}
+    assert {"precision", "recall", "f1", "pr_auc", "roc_auc"} <= set(m)

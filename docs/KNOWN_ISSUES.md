@@ -1,5 +1,11 @@
 # Known Issues and Limitations
 
+> **Update (store + console MVP):** this file describes the earlier fraud-only prototype. The current blockers and limits are in
+> `IMPLEMENTATION_REPORT.md` (section "Remaining blockers") and `docs/security.md` (section "Known limitations"). Items 1-2 below
+> (live Supabase, Kaggle dataset) are still BLOCKED; items 3-4 are now covered by an axe/375 px browser run, which is not a full
+> accessibility audit or a pixel comparison with any reference design.
+
+
 ## Blockers (cannot be completed without something from you)
 1. **Live Supabase sign-in is untested.** A project URL, publishable key and JWT secret are now configured locally (git-ignored `.env` files) and the project's JWKS endpoint was fetched, but no account has completed sign-in (email-confirmation rate limit hit) and the SQL migration has not been run. Sign-up/sign-in, JWKS token verification, PostgREST calls, the SQL migration, RLS policies and the update trigger have not been run against a real project. Only mocked HTTP tests and a SQLite-backed live server run were done.
 2. **Kaggle dataset not on this computer.** The PCA demo model is built and tested on a fixture but untrained on real data; `scripts/download_kaggle.py` needs your Kaggle token. 2b. **No real labelled payment dataset.** The model is trained on synthetic data; its metrics are not evidence of real fraud-detection quality.

@@ -220,6 +220,9 @@ def build_providers(s: Settings) -> list:
             out.append(HeuristicProvider(s.brand_list, s.official_domain_list))
         elif name == "safebrowsing":
             out.append(SafeBrowsingProvider(s.safe_browsing_api_key))
+        elif name == "mock" and s.environment.lower() != "production":
+            pairs = [p.split("=", 1) for p in s.scamwatch_mock_verdicts.split(",") if "=" in p]
+            out.append(MockProvider({d.strip().lower(): v.strip() for d, v in pairs if v.strip() in VERDICT_RANK}))
         # unknown names are ignored on purpose; /settings/integrations shows what is really active
     return out
 
@@ -234,6 +237,9 @@ def provider_status(s: Settings) -> list[dict]:
             rows.append({"name": "safebrowsing", "configured": bool(s.safe_browsing_api_key), "kind": "external lookup",
                          "live_tested": False,
                          "note": "Needs SAFE_BROWSING_API_KEY. Live calls have not been verified in this project."})
+        elif name == "mock":
+            rows.append({"name": "mock", "configured": s.environment.lower() != "production", "kind": "SIMULATED (tests/demos)",
+                         "live_tested": False, "note": "Returns scripted verdicts. Not a real threat feed."})
         else:
             rows.append({"name": name, "configured": False, "kind": "unknown", "live_tested": False,
                          "note": "Unknown provider name; ignored."})

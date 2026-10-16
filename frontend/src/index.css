@@ -124,3 +124,10 @@ td.wrap{white-space:normal;min-width:220px;max-width:420px}
 .ops-overview{margin-bottom:18px}.store-link{margin-top:auto;border-top:1px solid var(--border)}
 .scam-page{max-width:680px}.primary-button.inline-btn{width:auto;padding:0 22px}
 @media(max-width:700px){.detail-list>div{grid-template-columns:1fr}}
+
+/* ---- Accessibility: darker greens for text on white/tinted backgrounds (WCAG AA contrast) ---- */
+.link-button,.text-link,.auth-switch a,.secondary-link{color:#146B3A}
+.stat-note{color:#066b45}
+.field-hint,.muted-text{color:#566170}
+th{color:#47535c}
+.breadcrumb a{color:#146B3A}

@@ -21,6 +21,7 @@ def evaluate(y_true, proba, threshold: float) -> dict:
         "test_rows": int(len(y_true)),
         "support_legitimate": int((y_true == 0).sum()),
         "support_fraud": int((y_true == 1).sum()),
+        "fraud_prevalence": float((y_true == 1).mean()) if len(y_true) else None,   # share of fraud in the held-out set
         "classification_report": classification_report(y_true, pred, labels=[0, 1],
                                                        target_names=["legitimate", "fraud"],
                                                        output_dict=True, zero_division=0),

@@ -50,7 +50,7 @@ describe("store home", () => {
     expect(screen.getByRole("heading", { name: /special offers/i })).toBeInTheDocument();
     const stock = screen.getAllByTestId("stock-badge").map(e => e.textContent);
     expect(stock).toEqual(expect.arrayContaining(["In stock", "Low stock · only 5 left", "Out of stock"]));
-    expect(screen.getByRole("button", { name: /butter is out of stock/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /unavailable: butter is out of stock/i })).toBeDisabled();
     expect(screen.getByText(/special/i, { selector: ".offer-tag" })).toBeInTheDocument();
   });
   it("shows a retry state when the catalogue cannot load", async () => {

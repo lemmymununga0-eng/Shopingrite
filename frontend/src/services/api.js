@@ -46,7 +46,7 @@ async function request(path, options = {}) {
     throw new Error("Cannot reach the FraudGuard API. Is the backend running?");
   }
   const body = await response.json().catch(() => ({}));
-  if (response.status === 401) {
+  if (response.status === 401 && !path.startsWith("/auth/local/login")) {      // a wrong password is not an expired session
     onUnauthorized();
     throw new Error("Your session has expired. Please sign in again.");
   }
