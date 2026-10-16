@@ -1,0 +1,58 @@
+import { Suspense, lazy } from "react";
+import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+import Layout from "./components/Layout";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import PaymentCard from "./pages/PaymentCard";
+import Transaction from "./pages/Transaction";
+import ModelDemo from "./pages/ModelDemo";
+import Alerts from "./pages/Alerts";
+import History from "./pages/History";
+import TransactionDetail from "./pages/TransactionDetail";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
+import About from "./pages/About";
+
+// The dashboard pulls in the chart library, so it is loaded only when visited.
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+
+/** Frontend gate for convenience only. The API verifies the token on every request. */
+export function Protected({ children }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return <div className="loading" role="status">Checking your session…</div>;
+  return user ? children : <Navigate to="/login" replace state={{ from: location }} />;
+}
+
+export function NotFound() {
+  return <div className="not-found"><div>
+    <h1>404 — Page not found</h1><p className="muted-text">That page does not exist.</p>
+    <Link className="btn btn-primary" to="/dashboard">Go to Dashboard</Link></div></div>;
+}
+
+export default function App() {
+  return <Routes>
+    <Route path="/login" element={<Login/>}/>
+    <Route path="/register" element={<Register/>}/>
+    <Route path="/forgot-password" element={<ForgotPassword/>}/>
+    <Route path="/reset-password" element={<ResetPassword/>}/>
+    <Route element={<Protected><Layout/></Protected>}>
+      <Route path="/" element={<Navigate to="/dashboard" replace/>}/>
+      <Route path="/dashboard" element={<Suspense fallback={<div className="loading" role="status">Loading dashboard…</div>}><Dashboard/></Suspense>}/>
+      <Route path="/payment-card" element={<PaymentCard/>}/>
+      <Route path="/payment" element={<Transaction/>}/>
+      <Route path="/model-demo" element={<ModelDemo/>}/>
+      <Route path="/alerts" element={<Alerts/>}/>
+      <Route path="/history" element={<History/>}/>
+      <Route path="/transactions/:id" element={<TransactionDetail/>}/>
+      <Route path="/profile" element={<Profile/>}/>
+      <Route path="/settings" element={<Settings/>}/>
+      <Route path="/about" element={<About/>}/>
+      <Route path="/transaction" element={<Navigate to="/payment" replace/>}/>
+      <Route path="*" element={<NotFound/>}/>
+    </Route>
+  </Routes>;
+}
