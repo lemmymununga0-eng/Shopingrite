@@ -69,11 +69,14 @@ def normalize_url(raw: str) -> tuple[str, str, list[str]]:
         notes.append("contains_credentials_in_url")
     try:
         ip = ipaddress.ip_address(host)
+    except ValueError:
+        ip = None
+    if ip is not None:
         if not ip.is_global:
             raise InvalidUrl("Private, local and reserved network addresses are not accepted.")
         notes.append("ip_address_host")
         domain = str(ip)
-    except ValueError:
+    else:
         try:
             ascii_host = host.encode("idna").decode("ascii")
         except UnicodeError:
@@ -239,6 +242,8 @@ def provider_status(s: Settings) -> list[dict]:
 
 # ---------------------------------------------------------------- checking and reporting
 def run_check(normalized: str, domain: str, notes: list[str], providers: list, events=None, correlation_id=None) -> dict:
+    """Pure analysis: it never writes to the database. Callers log provider failures with record_provider_failures()
+    AFTER their own transaction has closed (a second writer inside an open transaction would deadlock on SQLite)."""
     results: list[ProviderResult] = []
     for p in providers:
         try:
@@ -246,9 +251,6 @@ def run_check(normalized: str, domain: str, notes: list[str], providers: list, e
         except Exception as exc:         # a provider bug must not break the request
             res = ProviderResult(getattr(p, "name", "unknown"), "error", "inconclusive",
                                  f"The provider failed ({type(exc).__name__}).", getattr(p, "name", "unknown"))
-        if res.status == "error" and events is not None:
-            events.record("medium", "provider", "provider.failure", f"ScamWatch provider '{res.provider}' failed: {res.detail}",
-                          correlation_id=correlation_id, details={"provider": res.provider})
         results.append(res)
     answered = [r for r in results if r.status == "ok"]
     verdict = max((r.verdict for r in answered), key=lambda v: VERDICT_RANK[v]) if answered else "inconclusive"
@@ -256,6 +258,14 @@ def run_check(normalized: str, domain: str, notes: list[str], providers: list, e
             "providers": [asdict(r) for r in results],
             "provider_errors": [r.provider for r in results if r.status == "error"],
             "simulated": any(r.simulated for r in results), "disclaimer": DISCLAIMER}
+
+
+def record_provider_failures(events, check: dict, correlation_id=None):
+    for p in check["providers"]:
+        if p["status"] == "error":
+            events.record("medium", "provider", "provider.failure",
+                          f"ScamWatch provider '{p['provider']}' failed: {p['detail']}",
+                          correlation_id=correlation_id, details={"provider": p["provider"]})
 
 
 def report_out(r: ScamReport, include_notes: bool) -> dict:

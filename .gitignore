@@ -32,3 +32,10 @@ backend/reports/*
 !backend/reports/README.md
 !backend/data/README.md
 !backend/models/README.md
+
+# local demo auth secret, SQLite sidecar files, test/e2e output
+backend/data/local_auth_secret.txt
+*.db-wal
+*.db-shm
+frontend/test-results/
+frontend/playwright-report/

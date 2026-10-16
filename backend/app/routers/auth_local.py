@@ -33,18 +33,21 @@ def local_login(body: LocalLogin, request: Request):
     tag = client_tag(request)
     request.app.state.limiter.check(f"login:{tag}", s.login_rate_limit_per_min,
                                     message="Too many sign-in attempts. Wait a minute and try again.")
+    token = profile = None
     with request.app.state.db.session() as session:
         user = session.scalar(select(AppUser).where(AppUser.email == body.email.strip().lower()))
         ok = verify_password(body.password, user.password_hash if user else DUMMY_HASH)   # same work either way
-        if not (user and ok and user.is_active):
-            request.app.state.events.record("medium", "authentication", "auth.login_failed",
-                                            "Failed local sign-in attempt", client_tag=tag,
-                                            path=request.url.path, method="POST", status_code=401,
-                                            correlation_id=correlation(request), dedupe=False)
-            raise HTTPException(401, "Incorrect email or password.")
-        token = issue_local_token(user.id, user.email, user.role, s.local_auth_secret, s.jwt_audience,
-                                  s.local_auth_token_minutes)
-        profile = {"id": user.id, "email": user.email, "full_name": user.full_name, "role": user.role}
+        if user and ok and user.is_active:
+            token = issue_local_token(user.id, user.email, user.role, s.local_auth_secret, s.jwt_audience,
+                                      s.local_auth_token_minutes)
+            profile = {"id": user.id, "email": user.email, "full_name": user.full_name, "role": user.role}
+    if token is None:
+        # Recorded AFTER the transaction closed: the events writer uses its own transaction.
+        request.app.state.events.record("medium", "authentication", "auth.login_failed",
+                                        "Failed local sign-in attempt", client_tag=tag,
+                                        path=request.url.path, method="POST", status_code=401,
+                                        correlation_id=correlation(request))
+        raise HTTPException(401, "Incorrect email or password.")
     return {"access_token": token, "token_type": "bearer", "expires_in": s.local_auth_token_minutes * 60,
             "user": profile, "notice": "Local demonstration sign-in. Not for production."}
 

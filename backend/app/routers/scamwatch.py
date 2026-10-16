@@ -36,8 +36,9 @@ def check(body: CheckRequest, request: Request, user: User = Depends(require("sc
                                         actor_id=user.id, path=request.url.path, method="POST", status_code=422,
                                         correlation_id=correlation(request), dedupe=True)
         raise HTTPException(422, str(exc))
-    return sw.run_check(normalized, domain, notes, request.app.state.providers, request.app.state.events,
-                        correlation(request))
+    result = sw.run_check(normalized, domain, notes, request.app.state.providers)
+    sw.record_provider_failures(request.app.state.events, result, correlation(request))
+    return result
 
 
 @router.post("/reports", status_code=201, dependencies=[guard])
@@ -45,9 +46,10 @@ def create_report(body: ReportRequest, request: Request, response: Response,
                   user: User = Depends(require("scamwatch.check"))):
     with request.app.state.db.session() as session:
         report, duplicate, check_result = sw.submit_report(session, user, body.url, body.comment,
-                                                           request.app.state.providers, request.app.state.events,
+                                                           request.app.state.providers, None,
                                                            correlation(request))
         out = sw.report_out(report, include_notes=user.has("scamwatch.view_all"))
+    sw.record_provider_failures(request.app.state.events, check_result, correlation(request))
     if duplicate:
         response.status_code = 200
     return {"duplicate": duplicate, "report": out, "check": check_result,

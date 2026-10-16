@@ -36,10 +36,29 @@ def model_path(tmp_path_factory):
     return path
 
 
+LOCAL_SECRET = "local-demo-secret-local-demo-secret-0123456789"
+
+
 @pytest.fixture()
 def settings(tmp_path, model_path):
     return Settings(db_backend="sqlite", sqlite_path=tmp_path / "t.db", supabase_jwt_secret=SECRET,
-                    model_path=model_path, predict_rate_limit_per_min=1000, _env_file=None)
+                    model_path=model_path, predict_rate_limit_per_min=1000,
+                    database_url=f"sqlite:///{(tmp_path / 'app.db').as_posix()}", seed_demo_data=True,
+                    checkout_rate_limit_per_min=1000, cart_rate_limit_per_min=1000, scamwatch_rate_limit_per_min=1000,
+                    scamwatch_providers="heuristic", _env_file=None)
+
+
+@pytest.fixture()
+def local_settings(settings):
+    settings.local_auth_enabled = True
+    settings.local_auth_secret = LOCAL_SECRET
+    return settings
+
+
+@pytest.fixture()
+def local_client(local_settings):
+    with TestClient(create_app(local_settings)) as c:
+        yield c
 
 
 @pytest.fixture()
@@ -65,3 +84,40 @@ def valid_payload(**over):
 
 RISKY = dict(amount=9000.0, hour=2, failed_attempts=5, new_device=True, international=True,
              customer_avg_spend=100.0)
+
+
+# ---------- store helpers ----------
+CUSTOMER = ("cust-1", "customer")
+CUSTOMER_2 = ("cust-2", "customer")
+
+
+def cust(sub="cust-1"):
+    return auth(sub, "customer")
+
+
+def admin_h():
+    return auth("admin-1", "admin")
+
+
+def pid(client, sku):
+    items = client.get(f"/products?search={sku}").json()["items"]
+    assert items, f"seed product {sku} missing"
+    return items[0]["id"]
+
+
+def put_in_cart(client, headers, sku, qty=1):
+    return client.post("/cart/items", json={"product_id": pid(client, sku), "quantity": qty}, headers=headers)
+
+
+ORDER_BODY = {"fulfilment": "delivery",
+              "contact": {"name": "Test Shopper", "email": "shopper@example.com", "phone": "0821234567"},
+              "address": {"line": "12 Test Street", "city": "Johannesburg", "postal_code": "2000"}}
+
+
+def order_body(**over):
+    body = {**ORDER_BODY, **over}
+    return body
+
+
+def stock(client, sku):
+    return client.get(f"/products/{pid(client, sku)}").json()["available_quantity"]

@@ -32,6 +32,6 @@ def model_info(request: Request, predictor: Predictor = Depends(get_predictor), 
     m = predictor.metadata
     return {**base, "trained": True, "mode": "REAL_MODEL", "version": m["version"],
             "trained_at": m["trained_at"], "data_source": m["data_source"], "is_synthetic": m["is_synthetic"],
-            "n_rows": m["n_rows"], "threshold": m["threshold"], "metrics": m["metrics"],
+            "n_rows": m["n_rows"], "threshold": predictor.threshold, "trained_threshold": m["threshold"], "metrics": m["metrics"],
             "global_feature_importance": predictor.global_importance(),
             "importance_note": "Global importance across the training data. It does not explain any single prediction."}

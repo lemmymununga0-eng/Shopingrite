@@ -126,6 +126,8 @@ def update_case(session: Session, user, case: Case, *, status=None, assigned_to=
         if target != case.assigned_to:
             if target is not None and target != user.id and not perm.allowed(user.role, "cases.assign_any"):
                 raise HTTPException(403, "You can only assign a case to yourself")
+            if target is not None and case.assigned_to not in (None, user.id) and not is_admin:
+                raise HTTPException(403, "This case is already assigned to someone else")
             if target is None and case.assigned_to not in (None, user.id) and not is_admin:
                 raise HTTPException(403, "Only the assignee or an administrator can unassign this case")
             case.assigned_to = target
