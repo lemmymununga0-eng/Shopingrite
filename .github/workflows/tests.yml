@@ -7,7 +7,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
-      - run: pip install -r backend/requirements.txt pip-audit
+      - run: pip install -r backend/requirements-dev.txt pip-audit
       - run: python -m pytest -q
         working-directory: backend
       - run: pip-audit -r requirements.txt
@@ -29,11 +29,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
-      - run: pip install -r backend/requirements.txt
+      - run: pip install -r backend/requirements-dev.txt
       - run: >-
           python -m pytest -q
           tests/test_orders.py tests/test_cart.py tests/test_inventory.py tests/test_products.py tests/test_catalogue_zm.py
           tests/test_flutterwave.py tests/test_store_risk.py tests/test_catalogue_admin.py tests/test_app_repo.py
+          tests/test_store_ml.py tests/test_store_model.py tests/test_fraud_api.py
           tests/test_investigations.py tests/test_reports_admin.py tests/test_security_events.py
         working-directory: backend
 
@@ -60,7 +61,7 @@ jobs:
         with: { python-version: "3.12" }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - run: pip install -r backend/requirements.txt
+      - run: pip install -r backend/requirements-dev.txt
       - run: python -m app.ml.train_model --synthetic    # the model file is not committed
         working-directory: backend
       - run: npm ci && npx playwright install --with-deps chromium && npx playwright test

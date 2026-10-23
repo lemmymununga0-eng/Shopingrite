@@ -51,9 +51,10 @@ def labelled_rows(session) -> tuple[pd.DataFrame, dict]:
     counts = {"orders_with_outcome": len(latest), "excluded_unverified": 0, "excluded_undetermined": 0,
               "excluded_no_assessment": 0, "excluded_invalid_features": 0, "used": 0}
     first = {}
-    for a in session.scalars(select(FraudAssessment).where(FraudAssessment.trigger == "order_placed").order_by(FraudAssessment.id)):
+    for a in session.scalars(select(FraudAssessment).where(FraudAssessment.trigger == "order_placed", FraudAssessment.order_id.in_(select(OrderOutcome.order_id)))
+                              .order_by(FraudAssessment.id)):
         first.setdefault(a.order_id, a)
-    orders = {o.id: o for o in session.scalars(select(Order).where(Order.id.in_(list(latest) or [""])))}
+    orders = {o.id: o for o in session.scalars(select(Order).where(Order.id.in_(select(OrderOutcome.order_id))))}
     rows = []
     for oid, out in latest.items():
         if not out.verified:

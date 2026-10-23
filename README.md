@@ -36,7 +36,7 @@ simulated payment provider work offline.
 cd backend
 py -m venv venv
 .\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 copy .env.example .env
 ```
 Edit `backend\.env` and set `LOCAL_AUTH_ENABLED=true` for the offline demo (never on a server others can reach). Then train the

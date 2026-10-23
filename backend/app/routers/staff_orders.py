@@ -180,26 +180,24 @@ def _in_audit_sample(order_id: str, when) -> bool:
 @router.get("/staff/label-queue")
 def label_queue(limit: Annotated[int, Query(ge=1, le=100)] = 30, user: User = Depends(require("fraud.view")), session=Depends(get_session)):
     """Orders still waiting for a verified outcome: rule-flagged orders first, then a deterministic audit sample of UNFLAGGED orders.
-    Reviewing the sample keeps the labels from covering only what the rules already catch (see docs/LABEL_COLLECTION.md)."""
-    verified = {o for (o,) in session.execute(select(OrderOutcome.order_id).where(OrderOutcome.verified.is_(True),
-                                                                                OrderOutcome.outcome != "undetermined"))}
-    latest = {}
-    for a in session.scalars(select(FraudAssessment).order_by(FraudAssessment.id)):
-        latest[a.order_id] = a
-    flagged, sample = [], []
-    for oid, a in latest.items():
-        if oid in verified:
-            continue
-        order = session.get(Order, oid)
-        if order is None:
-            continue
-        row = {"order_id": oid, "reference": order.reference, "created_at": order.created_at.isoformat(), "total_cents": order.total_cents,
-               "currency": order.currency, "rules_score": a.score, "rules_decision": a.decision}
-        if a.decision != "allow":
-            flagged.append({**row, "why": "flagged by rules"})
-        elif _in_audit_sample(oid, order.created_at):
-            sample.append({**row, "why": "audit sample (unflagged)"})
-    flagged.sort(key=lambda r: -r["rules_score"])
-    sample.sort(key=lambda r: r["created_at"], reverse=True)
-    return {"items": (flagged + sample)[:limit], "flagged_waiting": len(flagged), "audit_sample_waiting": len(sample),
+    Reviewing the sample keeps the labels from covering only what the rules already catch (see docs/LABEL_COLLECTION.md).
+    Bounded queries: never reads the whole assessments table."""
+    from datetime import timedelta
+
+    from ..db.models import utcnow
+    verified = select(OrderOutcome.order_id).where(OrderOutcome.verified.is_(True), OrderOutcome.outcome != "undetermined")
+    newest = select(func.max(FraudAssessment.id)).group_by(FraudAssessment.order_id)
+    base = (select(FraudAssessment, Order).join(Order, Order.id == FraudAssessment.order_id)
+            .where(FraudAssessment.id.in_(newest), Order.id.not_in(verified)))
+
+    def item(a, o, why):
+        return {"order_id": o.id, "reference": o.reference, "created_at": o.created_at.isoformat(), "total_cents": o.total_cents,
+                "currency": o.currency, "rules_score": a.score, "rules_decision": a.decision, "why": why}
+
+    flagged_q = base.where(FraudAssessment.decision != "allow").order_by(FraudAssessment.score.desc(), Order.created_at.desc())
+    flagged = [item(a, o, "flagged by rules") for a, o in session.execute(flagged_q.limit(500))]
+    flagged_total = session.scalar(select(func.count()).select_from(flagged_q.subquery()))
+    recent = base.where(FraudAssessment.decision == "allow", Order.created_at >= utcnow() - timedelta(days=14))         .order_by(Order.created_at.desc()).limit(2000)
+    sample = [item(a, o, "audit sample (unflagged)") for a, o in session.execute(recent) if _in_audit_sample(o.id, o.created_at)]
+    return {"items": (flagged + sample)[:limit], "flagged_waiting": flagged_total, "audit_sample_waiting": len(sample),
             "audit_sample_rate": f"1 in {AUDIT_SAMPLE_RATE} unflagged orders per week"}

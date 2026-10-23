@@ -1,0 +1,4 @@
+# For downloading datasets and training models (python -m app.ml.train ...). Not needed to serve the API.
+-r requirements.txt
+pyarrow>=15,<30
+matplotlib>=3.8,<4

@@ -208,6 +208,11 @@ def create_app(settings: Settings | None = None, repo=None, predictor: Predictor
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
         response.headers.setdefault("Cache-Control", "no-store")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        if request.url.path not in ("/docs", "/redoc", "/openapi.json"):          # the interactive docs (dev only) need scripts
+            response.headers.setdefault("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+        if app.state.settings.environment.lower() == "production":
+            response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
         code = response.status_code
         pending = getattr(request.state, "security_event", None)
         if pending or code in (403, 429):

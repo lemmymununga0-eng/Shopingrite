@@ -15,9 +15,8 @@ Customer's browser ──► Vercel (website, /frontend)
 ```
 
 ## 0. What you need before you start
-* The code in a GitHub repository (the `GLORIAL WHY` folder is a Git repository with no remote yet: create an empty
-  repository on GitHub, then `git remote add origin <url>`, `git add -A`, `git commit`, `git push -u origin master`).
-  `.env` files are git-ignored and must never be committed.
+* The code in a GitHub repository: https://github.com/lemmymununga0-eng/Shopingrite (branch `master`, already pushed).
+  `.env` files are git-ignored and must never be committed. Read `docs/PRODUCTION_READINESS.md` first: it lists what is verified and what is not.
 * Accounts: Render, Vercel, Supabase (you have a project), Flutterwave (a free account gives test keys).
 
 ## 1. Database (PostgreSQL)
@@ -128,3 +127,14 @@ mobile money when the store sends `payment_options: "mobilemoneyzambia"`; (2) th
 | Paid, but the order stays *Pending* | Webhook URL or secret hash wrong (Flutterwave delivery log shows 401); the minute-by-minute check settles it within about two minutes anyway. |
 | Customers cannot register | Supabase > Authentication > e-mail provider / rate limits / Site URL. |
 | `psycopg` / connection errors | Use the **session** pooler or direct connection string; the password must be URL-encoded. |
+
+## 8. Trained models in production (optional: the store works without them)
+* Orders are always assessed by the rule engine `store_risk_v1`. The dashboard model panel shows each trained model as **Not trained**
+  on a new deployment: that is correct, not an error.
+* The card (V1-V28) and phishing models are research/ScamWatch models. To use the phishing signal in ScamWatch, train it where the data is
+  available and copy `backend/artifacts/fraud/url_phishing/` to the server (or train on a one-off job with `pip install -r requirements-ml.txt`,
+  `python scripts/fetch_datasets.py get phiusiil --accept-licence`, `python -m app.ml.train --dataset phiusiil`), set `SCAMWATCH_PROVIDERS=heuristic,ml_url`,
+  and read the limits in `docs/ML_EVALUATION.md` first (the dataset makes the task look easier than real life).
+* A grocery model needs verified outcomes first: see `docs/LABEL_COLLECTION.md`. Until then record outcomes in **Orders & Risk** and review the audit sample on the dashboard.
+* Render installs only `requirements.txt` (runtime). `requirements-ml.txt` adds training tools; `requirements-dev.txt` adds the test tools.
+* Set `ML_ARTIFACT_DIR` if you keep model files on a Render persistent disk (the default is `backend/artifacts/fraud`, which is wiped on each deploy).

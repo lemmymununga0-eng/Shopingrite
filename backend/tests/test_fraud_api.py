@@ -136,3 +136,17 @@ def test_pca_demo_uses_the_verified_model_when_one_is_ready(live):
     assert r.json()["prediction"] in (0, 1) and 0 <= r.json()["fraud_probability"] <= 1 and r.json()["risk_level"] in ("High", "Medium", "Low")
     bad = live.post("/pca-demo/predict", headers=auth(), json={"features": {"V1": 1.0}})
     assert bad.status_code == 422
+
+
+def test_ml_url_provider_is_wired_in_only_when_configured_and_skips_when_untrained(settings):
+    from tests.conftest import cust
+    with TestClient(create_app(settings)) as c0:
+        assert "ml_url" not in {p.name for p in c0.app.state.providers}            # off unless the operator opts in
+    settings.scamwatch_providers = "heuristic,ml_url"
+    with TestClient(create_app(settings)) as c:
+        assert [p.name for p in c.app.state.providers] == ["heuristic", "ml_url"]
+        r = c.post("/scamwatch/check", headers=cust(), json={"url": "http://secure-login.example.xyz/verify"})
+        assert r.status_code == 200
+        ml = next(p for p in r.json()["providers"] if p["provider"] == "ml_url")
+        assert ml["status"] == "skipped" and ml["verdict"] == "inconclusive"
+        assert r.json()["verdict"] in ("suspicious", "inconclusive")          # the untrained model contributes nothing and never says "safe"
