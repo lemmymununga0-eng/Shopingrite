@@ -145,12 +145,13 @@ for (const b of content.blocks) {
 
 // ---------- footers: first page carries the corresponding-author block at the lower left ----------
 const pageNo = () => new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: BODY })] });
-const firstFooter = new Footer({ children: [
+const noFooter = content.meta.noFooter === true;          // the cover letter has neither a rule nor a page number
+const firstFooter = noFooter ? new Footer({ children: [] }) : new Footer({ children: [
   new Paragraph({ border: { top: { style: BorderStyle.SINGLE, size: 4, color: "000000", space: 4 } }, spacing: { before: 0, after: 20 }, children: [] }),
   ...content.meta.corresponding.map(l => new Paragraph({ alignment: AlignmentType.LEFT, spacing: { before: 0, after: 10, line: 240 }, children: runs(l, { size: 17 }) })),
   pageNo(),
 ] });
-const defaultFooter = new Footer({ children: [pageNo()] });
+const defaultFooter = noFooter ? new Footer({ children: [] }) : new Footer({ children: [pageNo()] });
 
 const doc = new Document({
   creator: content.meta.creator, title: content.meta.docTitle, description: content.meta.description,

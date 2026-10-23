@@ -23,6 +23,11 @@ pip install -r backend/requirements-dev.txt
 python backend/scripts/fetch_datasets.py get creditcard-openml --accept-licence
 python backend/scripts/fetch_datasets.py get phiusiil --accept-licence
 
+cd backend                                     # the latency and spot-check steps score the models in the registry
+python -m app.ml.train --dataset creditcard-openml
+python -m app.ml.train --dataset phiusiil
+cd ..
+
 python research/card_experiments.py all        # about 50 minutes on a 12-thread computer
 python research/phishing_experiments.py all    # about 30 minutes; run `benchmark` before the other steps
 python research/store_experiments.py all

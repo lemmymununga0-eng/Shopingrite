@@ -35,7 +35,7 @@ for p in paras:
     for i, line in enumerate(p.split("\n")):
         blocks.append({"t": "p", "text": line, "align": "left"})
     blocks.append({"t": "p", "text": " ", "align": "left"})
-content = {"meta": {"creator": A["creator"], "docTitle": "Cover letter", "description": "Cover letter", "corresponding": [""]}, "blocks": blocks}
+content = {"meta": {"creator": A["creator"], "docTitle": "Cover letter", "description": "Cover letter", "corresponding": [], "noFooter": True}, "blocks": blocks}
 (HERE / "cover_content.json").write_text(json.dumps(content, ensure_ascii=False, indent=1), encoding="utf8")
 env = dict(os.environ)
 if os.environ.get("PAPER_NODE_MODULES"):

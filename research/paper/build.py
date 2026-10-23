@@ -197,7 +197,7 @@ add("keywords", text=KEYWORDS)
 # ============================================================================================================ 1 Introduction
 H1("1. Introduction")
 H2("1.1 Background")
-P("Mobile money has become the main way many people in sub-Saharan Africa move value. The GSMA counted more than two billion registered mobile money accounts worldwide in 2024, "
+P("Mobile money is now a major way for people in sub-Saharan Africa to move value. The GSMA counted more than two billion registered mobile money accounts worldwide in 2024, "
   "more than one billion of them in sub-Saharan Africa, and almost 1.7 trillion US dollars passing through those accounts during the year [[GSMA2025|pp. 3, 14]]. "
   "Online shops can reach these customers through payment aggregators that offer card and mobile money checkout, so a small grocery store can open with little more than a catalogue, "
   "a hosted checkout and a delivery service. The same report says that fraud remained a pervasive issue for the industry in 2024 and that most of it involves agents or customers [[GSMA2025|p. 63]].")
@@ -311,7 +311,7 @@ P("When the order is saved, the rule engine store_risk_v1 computes a score from 
   "inputs (Time, Amount and 28 anonymised components) that the store schema does not contain, so for every order it answers with the field names it could not find. A model trained on store data would run in shadow mode while it is "
   "marked experimental: its probability is stored beside the rule score and it cannot raise alerts.")
 P("Staff can record an outcome for any order: confirmed fraud, false positive, legitimate or undetermined, with a flag that shows whether evidence outside the system verified it. Rows "
-  "are only ever appended; the newest row for an order wins. Only verified, definite outcomes become labels, and unreviewed orders are not assumed legitimate. "
+  "are only appended, and the newest row for an order wins. Only verified, definite outcomes become labels, and unreviewed orders are not assumed legitimate. "
   "A deterministic weekly sample puts about one in ten unflagged orders in front of reviewers, so that labels are not drawn only from orders the rules already suspected "
   "[[Lakkaraju2017]]. Training is attempted only with at least 150 verified fraud cases, 1,000 verified legitimate cases and 50 customers. The validation gate then requires 30 "
   "fraud rows in a customer-grouped test set, a score well above a do-nothing baseline, a successful reload in a fresh process and a better score than the rule engine on the same "
@@ -388,9 +388,9 @@ TAB("rules", "Rules of store_risk_v1. A hard rule opens a case even when the tot
 ], [1.6, 5.2, 0.7, 0.6], leftAll=True)
 H2("3.6 Model optimisation")
 P("Hyperparameters were chosen by four-fold stratified cross-validation on the training partition, with average precision (PR-AUC) as the criterion; {T:hyper} lists the grids and the selected values. "
-  "The chosen model's out-of-fold predictions were used twice: to fit an isotonic regression that turns scores into probabilities [[Niculescu2005]], and to choose the decision threshold. For the card and "
-  "first web-address models the threshold maximises the F2 score, which weights recall twice as heavily as precision because a missed fraud costs more than an unnecessary review. "
-  "For the host-name model, which may only raise suspicion, the threshold gives the highest recall at a false-positive rate of at most 1%. The test partition played no part in either step. The inner cross-validation for the "
+  "The chosen model's out-of-fold predictions were used twice: to fit an isotonic regression that turns scores into probabilities [[Niculescu2005]], and to choose the decision threshold. For the card model and "
+  "the original web-address models the threshold maximises the F2 score, which weights recall twice as heavily as precision because a missed fraud costs more than an unnecessary review. "
+  "For the host-name models, which may only raise suspicion, the threshold gives the highest recall at a false-positive rate of at most 1%. The test partition played no part in either step. The inner cross-validation for the "
   "web addresses was stratified, not grouped by domain, so its scores are optimistic; the outer test partition is grouped and its results are the ones reported.")
 def fmt_params(p):
     return ", ".join(f"{k} = {'none' if v is None else v}" for k, v in p.items())
@@ -563,11 +563,11 @@ P(f"{{T:scen}} and {{F:scen}} show {NUM_WORD.get(N_SCEN, str(N_SCEN))} scripted 
   "The limit for a high-value order was set to ZMW 300 so that basket sizes in the demonstration catalogue can reach it.")
 TAB("scen", "Rule-engine behaviour on scripted checkouts.", ["Scenario", "Rules that fired", "Score", "Decision", "Case"], [
     [s["name"], ", ".join(r["rule"].replace("_", " ") for r in s["rules"]) or "none", str(s["score"]), s["decision"], "yes" if s["case_opened"] else "no"] for s in ss["scenarios"]], [2.6, 3.4, 0.7, 0.9, 0.7], leftAll=True,
-    note="Note. A score of 30 or more is review and 60 or more is high. An order burst and repeated rejections open a case through hard rules, although each scores only 20.")
+    note="Note. A score of 30 or more is review and 60 or more is high. An order burst and repeated rejections each score 20 but open a case through hard rules.")
 FIG("scen", "fig12_scenarios.png", "Rule points by scenario. Dashed lines mark the review and high bands.", width=6.2)
 P("Weak signals do not escalate on their own: a spend spike, a new delivery address, a night-time order or three failed payments each score 25 points or fewer and open no case. "
   "A strong or combined pattern does escalate, as in the bulk first order (60) and the combined case (80). An order burst and repeated rejected checkouts each score only 20 but open a case, because their rules are hard rules. "
-  "One result may surprise a reader: three failed payments in a day score 25 and do not reach review. A store that wants them to count can raise that rule's points, and the stored reasons make the change easy to justify.")
+  "Three failed payments in a day score 25 and do not reach review. A store that wants them to count can raise that rule's points, and the stored reasons make the change easy to justify.")
 H2("4.9 Comparison with existing methods")
 P("Direct comparison with published numbers is limited by differences in features, splits and thresholds. We therefore compare in three ways. {T:protocol} and {F:protocol} reproduce, on the same card data, "
   "evaluation shortcuts of the kind that [[n:Hayat2025]] describe. {T:shortcut}, {T:perturb} and {F:short} examine what the web-address scores depend on. {T:hostmodel} and {T:comp} then compare models with each other and with published results.")
@@ -643,10 +643,10 @@ host_flag_ordinary = sum(r["host_flagged"] for r in sp_ordinary)
 host_flag_phish = sum(r["host_flagged"] for r in sp_phish)
 small_biz = sp_by["https://my-small-grocery-lusaka-fresh-produce.com"]
 P(f"The host-name model that replaced it ignores those cues, and the robustness gate confirms it: all five checks pass, whereas the original model's flagged share of legitimate addresses rises by "
-  f"at least {100 * min_rise:.1f} percentage points under each change. The price is accuracy. The gradient-boosting host-name model reaches a PR-AUC of {f(HM['test']['pr_auc'])} "
+  f"at least {100 * min_rise:.1f} percentage points under each change. That stability costs accuracy: the gradient-boosting host-name model reaches a PR-AUC of {f(HM['test']['pr_auc'])} "
   f"(95% interval {band(phm['bootstrap'], 'hist_gradient_boosting', 'pr_auc')}), with precision {f(HM['test']['precision'])}, recall {f(HM['test']['recall'])} and a false-alarm rate of {pc_(HM['test']['false_positive_rate'], 2)}. "
   f"On the spot-check list it flagged {host_flag_ordinary} of the {len(sp_ordinary)} ordinary addresses and {host_flag_phish} of the {len(sp_phish)} phishing addresses from the data; sparkasse-auth.com scored {f(sp_by['https://sparkasse-auth.com/']['host_probability'], 2)}, "
-  f"below the threshold of {f(psp['host_model_threshold'], 2)}. The legitimate addresses in the benchmark are popular sites with short names, so a small business with a long hyphenated name can be flagged. An invented address of that kind "
+  f"below the threshold of {f(psp['host_model_threshold'], 2)}. The legitimate addresses in the benchmark belong to popular sites with short names, so a small business with a long, hyphenated name can be flagged. An invented address of that kind "
   f"(my-small-grocery-lusaka-fresh-produce.com) scored {f(small_biz['host_probability'], 2)}. We therefore keep the model experimental, and the ScamWatch checker does not use it.")
 P(T("{T:comp} places the original result beside published results on the same dataset and the same task. The comparison is indicative only: our split keeps domains apart and our features come from "
     "address text alone, whereas the preprint does not state its split in the abstract [[Emmanuel2026]]. Given the findings above, scores near 99% on this dataset say more about how the legitimate addresses were written than about "
@@ -694,7 +694,7 @@ P(f"We trained a web-address model, validated it on held-out domains and obtaine
   "as a gate before promotion, together with the rule that no address-model verdict reaches a user while it is experimental.")
 P("The framework avoids claims the data cannot support. A model that has not seen a field is not asked about it, an order that no one has reviewed is not labelled legitimate, and a model with too little "
   "evidence is kept out of the alert path. The price is some convenience, because the store starts with rules and not with a learned model.")
-P("The results agree with the cautions in the literature. The inflation from oversampling before the split matches the warning that leakage can produce near-perfect recall [[Hayat2025]], and the web-address data "
+P("The inflation from oversampling before the split matches the warning that leakage can produce near-perfect recall [[Hayat2025]], and the web-address data "
   "show the kind of cue that shortcut learning predicts [[Geirhos2020]]. Our random forest beat logistic regression and gradient boosting, in line with the strength of tree ensembles on tabular data [[Grinsztajn2022]], "
   "but the same ordering is not guaranteed on another dataset, and the PR-AUC and ROC-AUC rankings disagree here. The practical implication for a retailer is to report precision-recall results with intervals and "
   "to ask any vendor which protocol produced a quoted score.")

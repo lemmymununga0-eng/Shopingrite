@@ -7,7 +7,7 @@
     "pandas": "3.0.3",
     "scikit-learn": "1.8.0",
     "scipy": "1.17.1",
-    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "git_commit": "d46f67c2647ad8804daa50a74b71ccf78004cd17",
     "seed": 42
   },
   "api_operations": 75,
@@ -39,16 +39,16 @@
     "security_events",
     "stock_movements"
   ],
-  "backend_tests_collected": 558,
+  "backend_tests_collected": 564,
   "lines_of_code": {
-    "backend_app_py": 9229,
-    "backend_tests_py": 5662,
+    "backend_app_py": 9365,
+    "backend_tests_py": 5734,
     "frontend_src_js_jsx": 6479,
-    "research_py": 2222
+    "research_py": 2556
   },
   "ci_latest": {
-    "run_number": 4,
-    "commit": "7edee26",
+    "run_number": 5,
+    "commit": "d46f67c",
     "conclusion": "success",
     "jobs": {
       "backend": "success",
