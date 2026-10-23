@@ -8,7 +8,10 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install -r backend/requirements-dev.txt pip-audit
-      - run: python -m pytest -q
+      - run: python -m pytest -q --junitxml=junit.xml
+        working-directory: backend
+      - if: failure()
+        run: python scripts/ci_annotate.py junit.xml           # failed tests show up as annotations on the run
         working-directory: backend
       - run: pip-audit -r requirements.txt
         working-directory: backend
