@@ -1,0 +1,28 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "n": 47284,
+  "models": {
+    "logistic_regression": {
+      "share_below_0_05_or_above_0_95": 0.9962143642669825,
+      "share_between_0_2_and_0_8": 0.0010997377548430758
+    },
+    "random_forest": {
+      "share_below_0_05_or_above_0_95": 0.9964047034937823,
+      "share_between_0_2_and_0_8": 0.0005921664833770408
+    },
+    "hist_gradient_boosting": {
+      "share_below_0_05_or_above_0_95": 0.9972929532188478,
+      "share_between_0_2_and_0_8": 0.00044412486253278066
+    }
+  }
+}

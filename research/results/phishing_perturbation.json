@@ -1,0 +1,58 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "threshold": 0.26666666666666666,
+  "legitimate": {
+    "as released": {
+      "flagged_share": 0.0008834572627549142,
+      "n": 27166
+    },
+    "remove the www prefix": {
+      "flagged_share": 1.0,
+      "n": 27166
+    },
+    "use http instead of https": {
+      "flagged_share": 1.0,
+      "n": 27166
+    },
+    "add a trailing slash": {
+      "flagged_share": 1.0,
+      "n": 27166
+    },
+    "add a path": {
+      "flagged_share": 1.0,
+      "n": 27166
+    }
+  },
+  "phishing": {
+    "as released": {
+      "flagged_share": 0.9947807933194155,
+      "n": 20118
+    },
+    "add a www prefix": {
+      "flagged_share": 0.9865294760910628,
+      "n": 20118
+    },
+    "use https instead of http": {
+      "flagged_share": 0.6678099214633662,
+      "n": 20118
+    },
+    "drop a lone trailing slash": {
+      "flagged_share": 0.9915001491201909,
+      "n": 20118
+    },
+    "rewrite as https://www.<host> (legitimate template)": {
+      "flagged_share": 0.29615269907545483,
+      "n": 20118
+    }
+  }
+}

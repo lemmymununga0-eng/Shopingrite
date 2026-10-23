@@ -150,3 +150,22 @@ def test_ml_url_provider_is_wired_in_only_when_configured_and_skips_when_untrain
         ml = next(p for p in r.json()["providers"] if p["provider"] == "ml_url")
         assert ml["status"] == "skipped" and ml["verdict"] == "inconclusive"
         assert r.json()["verdict"] in ("suspicious", "inconclusive")          # the untrained model contributes nothing and never says "safe"
+
+
+def test_served_probability_equals_the_pipeline_probability_and_scoring_is_single_threaded(live):
+    import pandas as pd
+    svc = live.app.state.ml
+    r = svc.result("creditcard_pca")
+    feats = row(V3=3.0, V6=3.0, V9=3.0)
+    served = svc.predict("creditcard_pca", feats)["probability"]
+    direct = float(r.pipeline.predict_proba(pd.DataFrame([feats])[r.metadata["input_features"]])[0][1])
+    assert abs(served - round(direct, 6)) < 1e-9
+    assert all(getattr(step, "n_jobs", 1) == 1 for _, step in r.pipeline.base.steps)     # no thread pool per request
+
+
+def test_ml_url_provider_skips_an_experimental_model():
+    res = {"status": "ok", "flagged": True, "probability": 0.99, "model_version": "v1", "experimental": True}
+    r = MlUrlProvider(_Fake(res)).check("http://x.example", "x.example", [])
+    assert r.status == "skipped" and r.verdict == "inconclusive" and "experimental" in r.detail
+    res["experimental"] = False
+    assert MlUrlProvider(_Fake(res)).check("http://x.example", "x.example", []).verdict == "suspicious"

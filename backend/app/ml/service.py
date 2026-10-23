@@ -122,8 +122,8 @@ class ModelService:
         try:
             data = store_schema.row(features) if name == "store_grocery" else {k: features[k] for k in r.metadata["input_features"]}
             row = pd.DataFrame([data])
-            p = float(r.pipeline.predict_proba(row)[0][1])
-            raw = float(r.pipeline.raw_score(row)[0])
+            raw = float(r.pipeline.raw_score(row)[0])                     # one forward pass; the calibrator maps it to a probability
+            p = float(min(1.0, max(0.0, r.pipeline.calibrator.predict([raw])[0])))
         except Exception as exc:                                       # never fabricate a score
             log.warning("ml prediction failed for %s: %s", name, type(exc).__name__)
             return {**base, "status": "prediction_failed", "message": "The model could not score this input."}

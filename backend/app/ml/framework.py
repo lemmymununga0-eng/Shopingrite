@@ -171,6 +171,21 @@ def select_threshold(y, p, beta: float = 2.0) -> dict:
             "selected_on": "out-of-fold predictions on the training partition only", "oof_precision": float(prec[i]), "oof_recall": float(rec[i])}
 
 
+def select_threshold_at_fpr(y, p, max_fpr: float = 0.01) -> dict:
+    """Highest-recall threshold whose false-positive rate on the given (training-side, out-of-fold) predictions stays at or below `max_fpr`.
+    Used for signals that may only raise suspicion, where a bounded false-alarm rate matters more than catching everything."""
+    from sklearn.metrics import roc_curve
+    y, p = np.asarray(y).astype(int), np.asarray(p, dtype=float)
+    fpr, tpr, thr = roc_curve(y, p)
+    ok = np.flatnonzero(fpr <= max_fpr)
+    i = int(ok[-1]) if len(ok) else 0
+    t = float(thr[i]) if np.isfinite(thr[i]) else float(p.max()) + 1e-9
+    pred = p >= t
+    tp, fp = int(((pred == 1) & (y == 1)).sum()), int(((pred == 1) & (y == 0)).sum())
+    return {"value": t, "objective": f"maximise recall with a false-positive rate of at most {max_fpr:g}", "selected_on": "out-of-fold predictions on the training partition only",
+            "oof_precision": tp / (tp + fp) if tp + fp else 0.0, "oof_recall": float(tpr[i]), "oof_false_positive_rate": float(fpr[i])}
+
+
 # ---------------------------------------------------------------------------------------------------- task description
 @dataclass
 class Candidate:
@@ -203,6 +218,7 @@ class TaskSpec:
     limitations: list[str] = field(default_factory=list)
     source_note: str = ""
     is_fixture: bool = False
+    max_fpr: float | None = None            # None: choose the threshold by F2; a number: highest recall with at most this false-positive rate
 
 
 @dataclass
@@ -288,7 +304,7 @@ def train_task(spec: TaskSpec, split_method: str = "stratified", folds: int = 4,
     # --- calibration + threshold: out-of-fold predictions of the chosen model, training partition only
     iso = IsotonicRegression(out_of_bounds="clip", y_min=0.0, y_max=1.0).fit(best_oof, y_tr)
     oof_cal = iso.predict(best_oof)
-    threshold = select_threshold(y_tr, oof_cal)
+    threshold = select_threshold_at_fpr(y_tr, oof_cal, spec.max_fpr) if spec.max_fpr else select_threshold(y_tr, oof_cal)
     validation_metrics = full_metrics(y_tr, oof_cal, threshold["value"])
 
     # --- final fit on the whole training partition, then ONE evaluation on the untouched test partition

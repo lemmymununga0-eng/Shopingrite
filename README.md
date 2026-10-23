@@ -84,9 +84,16 @@ refuses to start with an unsafe combination and says which setting to fix.
 backend/   main.py, app/ (routers, services, schemas, core, db, ml), tests/
 frontend/  src/ (store/, pages/, components/, context/, services/, tests/), e2e/ (Playwright + fake Flutterwave)
 supabase/  optional SQL for DB_BACKEND=supabase
-docs/      DEPLOYMENT.md (start here), architecture, data-model, security, testing
+docs/      DEPLOYMENT.md (start here), architecture, data-model, security, testing, ML_EVALUATION.md
+research/  experiments, saved results, figures and the journal manuscript (see research/README.md)
 render.yaml  frontend/vercel.json  .github/workflows/tests.yml
 ```
+
+## Research paper
+`research/` holds the experiments behind the paper *Auditable fraud-risk assessment for a Zambian online grocery store* (leakage-controlled
+benchmarks on public card-fraud and phishing data, a rule-engine evaluation, and a protocol for collecting verified labels). Every number
+in the paper is generated from `research/results/*.json`; `research/README.md` explains how to reproduce them and `docs/ML_EVALUATION.md`
+summarises the model results, including the negative result for the web-address model.
 
 ## 8. Troubleshooting
 | Symptom | Fix |

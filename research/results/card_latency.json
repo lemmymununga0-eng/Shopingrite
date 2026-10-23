@@ -1,0 +1,31 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "models": {
+    "creditcard_pca": {
+      "state": "ready",
+      "n": 500,
+      "p50_ms": 26.3824500143528,
+      "p95_ms": 42.36853499896823,
+      "p99_ms": 46.19065803126431,
+      "mean_ms": 29.0997433984885
+    },
+    "url_phishing": {
+      "state": "ready",
+      "n": 500,
+      "p50_ms": 4.347300011431798,
+      "p95_ms": 6.943729953491127,
+      "p99_ms": 7.578274019178934,
+      "mean_ms": 4.748310400173068
+    }
+  }
+}

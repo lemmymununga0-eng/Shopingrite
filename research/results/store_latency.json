@@ -1,0 +1,33 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "n_orders": 150,
+  "note": "in-process FastAPI TestClient, SQLite, single thread, simulated payment, no network: indicative only",
+  "checkout_post_orders": {
+    "p50_ms": 125.41119998786598,
+    "p95_ms": 233.5744449839694,
+    "p99_ms": 316.42546499497234,
+    "mean_ms": 137.41321866672175
+  },
+  "staff_order_detail_get": {
+    "p50_ms": 26.67255004053004,
+    "p95_ms": 47.128250013338395,
+    "p99_ms": 82.04091798979738,
+    "mean_ms": 31.550410668908928
+  },
+  "rule_engine_compute_only": {
+    "p50_ms": 4.968899971572682,
+    "p95_ms": 11.483735023648476,
+    "p99_ms": 12.21612700028345,
+    "mean_ms": 5.7177139989410835
+  }
+}

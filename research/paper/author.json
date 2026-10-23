@@ -1,0 +1,13 @@
+{
+  "creator": "[Surname], [Given name]",
+  "author_lines": [
+    "[Surname], [Given name]\\*",
+    "[Department], [University or organisation], [City], [Country]",
+    "E-mail: lemmymununga0@gmail.com"
+  ],
+  "corresponding_lines": [
+    "\\*Corresponding author: [Surname], [Given name]. [Postal address], [City], [Country]. Phone: [number]. E-mail: lemmymununga0@gmail.com"
+  ],
+  "ai_statement": "An AI assistant (Anthropic's Claude) helped to write the software, the analysis scripts and the text. The experiments were run with the scripts in the repository, every number that reports our own results is generated from the saved result files, and the author has reviewed the work and is responsible for it.",
+  "declarations": "Conflict of interest: the author declares no conflict of interest. Funding: no external funding was received. Data and code availability: the datasets are public (sources and licences are given in Section 3.2). The software, tests, experiment scripts and saved results are available at https://github.com/lemmymununga0-eng/Shopingrite (release tag paper-v1). Ethics: no human participants or personal data were involved; the customers in the scripted checkouts are synthetic."
+}

@@ -389,3 +389,67 @@ def test_the_training_entry_point_trains_saves_and_promotes_a_fixture(tmp_path):
     fast = entry.run("creditcard-openml", fast=True, promote=True, folds=3, artifact_root=tmp_path / "b", spec=fast_task(), log=lambda *a: None)
     assert fast["passed"] is False and fast["promoted"] is False and any("--fast" in f for f in fast["failures"])      # dev runs never go live
     assert entry.main(["--dataset", "paysim"]) == 3
+
+
+# ------------------------------------------------------------------------------------------------- URL robustness (host features, gate, FPR threshold)
+def test_canonical_host_ignores_scheme_www_path_query_and_trailing_slash():
+    a = ds.url_host_features_one("https://www.example.com/x?y=1")
+    assert a == ds.url_host_features_one("http://example.com") == ds.url_host_features_one("example.com/")
+    assert list(a) == ds.HOST_FEATURE_NAMES
+    for junk in ("", "   ", "http://[::1", "x" * 3000, "http://a:99999999/"):
+        assert set(ds.url_host_features_one(junk)) == set(ds.HOST_FEATURE_NAMES)                  # never raises
+
+
+LEGIT = ["https://www.example.com", "https://www.shop.co.zm", "https://www.news.org", "https://www.farm-fresh.com"]
+PHISH = ["https://paypal-login-secure-account.xyz/verify?id=1", "http://bank-update-1234567890.top/", "https://sparkasse-auth.com/"]
+
+
+def test_the_invariance_gate_refuses_a_model_that_learned_the_formatting_and_accepts_one_that_did_not():
+    formatting = lambda urls: [0.0 if u.startswith("https://www.") and u.count("/") == 2 else 1.0 for u in urls]       # noqa: E731
+    host_only = lambda urls: [1.0 if len(ds.canonical_host(u)) > 25 else 0.0 for u in urls]                         # noqa: E731
+    bad = ds.url_invariance_checks(formatting, LEGIT, PHISH, 0.5)
+    assert len(bad) == 5 and not any(c["passed"] for c in bad)
+    good = ds.url_invariance_checks(host_only, LEGIT, PHISH, 0.5)
+    assert all(c["passed"] for c in good)
+
+
+def make_formatting_only_fixture(n=2400, seed=5) -> pd.DataFrame:
+    """Legitimate rows are https://www.<host>; phishing rows are http://<host>/verify on the SAME kind of host: only the formatting separates them."""
+    rng = np.random.default_rng(seed)
+    rows = []
+    for _ in range(n):
+        host = f"shop{rng.integers(0, 600)}-{rng.integers(0, 99)}.com"
+        phish = rng.random() < 0.45
+        rows.append({"URL": f"http://{host}/verify" if phish else f"https://www.{host}", "Domain": host, "label": 0 if phish else 1})
+    return pd.DataFrame(rows)
+
+
+def test_a_lexical_url_model_that_learned_the_formatting_fails_the_gate_and_is_not_promoted(tmp_path):
+    from app.ml.train import run
+    spec = ds.phiusiil_task(make_formatting_only_fixture(), DATASET, fast=True, is_fixture=True, feature_set="lexical")
+    spec.min_pr_auc = 0.5
+    out = run("phiusiil", spec=spec, artifact_root=tmp_path, folds=3, log=lambda *a: None, features="lexical")
+    assert out["promoted"] is False and any("legitimate addresses stay unflagged" in f for f in out["failures"])
+    assert reg.load_current("url_phishing", root=tmp_path).state == reg.NOT_TRAINED
+
+
+def test_a_host_name_url_model_passes_the_gate_but_is_marked_experimental(tmp_path):
+    from app.ml.train import run
+    spec = ds.phiusiil_task(make_phish_fixture(), DATASET, fast=True, is_fixture=True, feature_set="host")
+    assert spec.max_fpr == 0.01
+    out = run("phiusiil", spec=spec, artifact_root=tmp_path, folds=3, log=lambda *a: None, features="host")
+    assert out["passed"], out["failures"]
+    r = reg.load_current("url_phishing", root=tmp_path)
+    assert r.ready and r.metadata["experimental"] is True and "never used" in r.metadata["experimental_reason"]
+    assert r.metadata["threshold_info"]["objective"].startswith("maximise recall with a false-positive rate")
+
+
+def test_the_false_positive_threshold_respects_its_bound():
+    from app.ml.framework import select_threshold_at_fpr
+    rng = np.random.default_rng(0)
+    y = np.r_[np.ones(500), np.zeros(5000)].astype(int)
+    p = np.r_[rng.beta(5, 2, 500), rng.beta(2, 5, 5000)]
+    t = select_threshold_at_fpr(y, p, 0.05)
+    assert ((p >= t["value"]) & (y == 0)).sum() / 5000 <= 0.05 and t["oof_false_positive_rate"] <= 0.05
+    looser = select_threshold_at_fpr(y, p, 0.2)
+    assert looser["oof_recall"] >= t["oof_recall"] and looser["value"] <= t["value"]

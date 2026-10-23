@@ -230,6 +230,8 @@ class MlUrlProvider:
             return ProviderResult(self.name, "skipped", "inconclusive", "The URL model is not trained or not loaded.", src)
         if res["status"] != "ok":
             return ProviderResult(self.name, "error", "inconclusive", "The URL model could not score this address.", src)
+        if res.get("experimental"):
+            return ProviderResult(self.name, "skipped", "inconclusive", "The URL model is experimental and is not used for verdicts.", src)
         if res["flagged"]:
             return ProviderResult(self.name, "ok", "suspicious",
                                   f"The address text resembles phishing links in the training data (estimate {res['probability']:.0%}, "
@@ -265,7 +267,7 @@ def provider_status(s: Settings) -> list[dict]:
                          "note": "Needs SAFE_BROWSING_API_KEY. Live calls have not been verified in this project."})
         elif name == "ml_url":
             rows.append({"name": "ml_url", "configured": True, "kind": "trained model (URL text only)", "live_tested": False,
-                         "note": "Skipped unless the url_phishing model is trained and ready. Can raise suspicion, never clears a site."})
+                         "note": "Skipped unless the url_phishing model is ready AND not experimental. The current model is experimental (see docs/ML_EVALUATION.md) and is never used for a verdict."})
         elif name == "mock":
             rows.append({"name": "mock", "configured": s.environment.lower() != "production", "kind": "SIMULATED (tests/demos)",
                          "live_tested": False, "note": "Returns scripted verdicts. Not a real threat feed."})

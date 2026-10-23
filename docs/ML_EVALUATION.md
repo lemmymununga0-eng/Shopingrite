@@ -39,23 +39,36 @@ Chronological robustness check (informational): oldest 80% train, newest 20% tes
   the random split, which can make results optimistic. The chronological check is the less optimistic number.
 - The model needs V1–V28. It cannot score a grocery order and **is not used to decide anything about store orders**.
 
-## Task B: `url_phishing` (URL text only)
+## Task B: `url_phishing` (URL text only): a negative result
 
-Version `url-phishing-20261023-091413`. Split: **grouped by domain**, 80/20 (train 188,086 / 80,402 phishing; test 47,284 / 20,118 phishing).
-Selected: logistic regression (C=1), cross-validated PR-AUC 0.9991 (gradient boosting 0.9990, dummy 0.427).
+**Short version: the first model I trained scored PR-AUC 0.9986 and was useless for real links. It was replaced.**
 
-| Held-out test metric | Value |
+The original model used 31 lexical features of the whole address. On the PhiUSIIL test partition (grouped by domain) it reached precision 0.9988, recall 0.9948 and PR-AUC 0.9986.
+Those numbers are an artefact of how the dataset was built. In the file, **every legitimate address is `https://www.<domain>` with no path and no trailing slash**
+(100% HTTPS, 100% "www.", 100% empty path), while phishing addresses are 49% HTTPS, 42% "www.", 40% empty path, 33% a lone "/" and 27% deeper paths. Only 0.6% of phishing addresses (627 of 100,520) match the legitimate template exactly.
+`research/phishing_experiments.py` shows the consequences:
+
+| Check (held-out addresses, original model) | Result |
 |---|---|
-| Threshold | 0.267 |
-| Precision / Recall / F1 | 0.9988 / 0.9948 / 0.9968 |
-| PR-AUC / ROC-AUC | 0.9986 / 0.9985 |
-| Confusion matrix | TN 27,142 · FP 24 · FN 105 · TP 20,013 |
-| Brier / expected calibration error | 0.0024 / 0.00044 |
+| Two features (`is_https`, URL length) | PR-AUC 0.952 |
+| Three features (`is_https`, `has_www`, `path_depth`) | PR-AUC 0.996 |
+| Remove "www." from legitimate test addresses | 0.1% flagged becomes 100% flagged |
+| Use http, add a trailing slash, or add a path (each alone) | 100% flagged |
+| Rewrite phishing addresses as `https://www.<host>` | detection falls from 99.5% to 29.6% |
+| Only addresses that already match the legitimate template | PR-AUC 0.28 (144 phishing test rows) |
 
-**Do not trust these numbers outside this dataset.** A simple linear model reaching 99.9% from URL text is a sign the dataset is easy in
-a specific way. Measured on the file: **100% of legitimate URLs are bare site roots served over HTTPS** (mean length 26 characters), while 49% of
-phishing URLs use HTTPS, 28% carry a path, and the mean length is 46. Any link with a path or plain HTTP is therefore close to "phishing" by construction. Real links, short-lived phishing pages, and compromised legitimate sites will look different. For that reason ScamWatch uses
-this model only to raise suspicion, never to clear a link, and only when the operator opts in with `SCAMWATCH_PROVIDERS=heuristic,ml_url`.
+Spot checks agreed: `https://google.com` and a GitHub link were flagged; `https://www.sparkasse-auth.com` was not.
+
+**What changed in the product**
+* `url_phishing` now uses only the canonical host name (10 features; scheme, "www.", port, path, query and trailing slash are ignored) and a threshold chosen for at most 1% false alarms.
+* A new validation gate (`datasets.url_invariance_checks`, run by `app.ml.train`) refuses any URL model whose verdict on legitimate addresses changes when we remove "www.", switch to http, add a slash or a path, or whose detection of phishing collapses when the address is rewritten in the legitimate format. The old model fails all five checks.
+* Every URL model is saved with `experimental: true`, and the ScamWatch provider `ml_url` skips experimental models. **No URL-model verdict is ever shown to a user.**
+
+**The replacement is weak, honestly measured.** Held-out PR-AUC 0.863 (gradient boosting), precision 0.979, recall 0.523 at a 0.8% false-alarm rate on the benchmark's legitimate addresses
+(logistic regression: 0.823, 0.976, 0.433). Its legitimate examples are popular sites with short names, so real small sites with long hyphenated names will be flagged (it scored a plausible
+small-business domain 0.93), and it misses phishing addresses that use ordinary-looking hosts. Treat it as a research prototype.
+
+Dataset-level lesson: the phishing dataset cannot support a deployable URL-text model. A useful one needs legitimate addresses sampled like real traffic (paths, plain http, no "www.", small sites).
 
 ## Not evaluated
 

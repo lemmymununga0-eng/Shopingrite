@@ -1,0 +1,292 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "permutation": [
+    {
+      "feature": "V4",
+      "mean_drop_in_pr_auc": 0.03743134619367057,
+      "sd": 0.006773682388121391
+    },
+    {
+      "feature": "V14",
+      "mean_drop_in_pr_auc": 0.014445478715069737,
+      "sd": 0.004852932260339577
+    },
+    {
+      "feature": "V18",
+      "mean_drop_in_pr_auc": 0.011583682607515477,
+      "sd": 0.003971228832120229
+    },
+    {
+      "feature": "V17",
+      "mean_drop_in_pr_auc": 0.007413646089541759,
+      "sd": 0.0015617844594959574
+    },
+    {
+      "feature": "V12",
+      "mean_drop_in_pr_auc": 0.006132301701498588,
+      "sd": 0.005482256971584729
+    },
+    {
+      "feature": "V11",
+      "mean_drop_in_pr_auc": 0.005929521096962653,
+      "sd": 0.00512870901634084
+    },
+    {
+      "feature": "V21",
+      "mean_drop_in_pr_auc": 0.003892616020750439,
+      "sd": 0.004621255872195909
+    },
+    {
+      "feature": "V22",
+      "mean_drop_in_pr_auc": 0.0025182526235531188,
+      "sd": 0.0017859598856377879
+    },
+    {
+      "feature": "V25",
+      "mean_drop_in_pr_auc": 0.0023883947244712324,
+      "sd": 0.0035253284280463396
+    },
+    {
+      "feature": "V27",
+      "mean_drop_in_pr_auc": 0.002304637541333321,
+      "sd": 0.0024001629409058133
+    },
+    {
+      "feature": "V7",
+      "mean_drop_in_pr_auc": 0.002171199045375305,
+      "sd": 0.0015883689851585814
+    },
+    {
+      "feature": "V23",
+      "mean_drop_in_pr_auc": 0.002066588158655058,
+      "sd": 0.0006735189659460533
+    },
+    {
+      "feature": "V16",
+      "mean_drop_in_pr_auc": 0.0017178522525053363,
+      "sd": 0.0020329953059740336
+    },
+    {
+      "feature": "Amount",
+      "mean_drop_in_pr_auc": 0.0014036237227524674,
+      "sd": 0.002716810716917011
+    },
+    {
+      "feature": "V8",
+      "mean_drop_in_pr_auc": 0.0014026248039781918,
+      "sd": 0.0029421647790617857
+    },
+    {
+      "feature": "V20",
+      "mean_drop_in_pr_auc": 0.0013689907551269974,
+      "sd": 0.0026519224820915396
+    },
+    {
+      "feature": "V10",
+      "mean_drop_in_pr_auc": 0.001000555854441143,
+      "sd": 0.004717007772735123
+    },
+    {
+      "feature": "V9",
+      "mean_drop_in_pr_auc": 0.0007467600698304988,
+      "sd": 0.0017372689714030868
+    },
+    {
+      "feature": "V6",
+      "mean_drop_in_pr_auc": 0.0007209511492079157,
+      "sd": 0.0023576707259741012
+    },
+    {
+      "feature": "V1",
+      "mean_drop_in_pr_auc": 0.0006773935337443859,
+      "sd": 0.0013081651797875933
+    },
+    {
+      "feature": "V26",
+      "mean_drop_in_pr_auc": -0.00030465557136936103,
+      "sd": 0.004594352335602077
+    },
+    {
+      "feature": "V3",
+      "mean_drop_in_pr_auc": -0.0003606458231959042,
+      "sd": 0.005310010825467355
+    },
+    {
+      "feature": "V15",
+      "mean_drop_in_pr_auc": -0.0005899529744081589,
+      "sd": 0.0008695271367635031
+    },
+    {
+      "feature": "Time",
+      "mean_drop_in_pr_auc": -0.0006907059794621251,
+      "sd": 0.0031627262354416846
+    },
+    {
+      "feature": "V28",
+      "mean_drop_in_pr_auc": -0.0016598576592892211,
+      "sd": 0.0032533610667498927
+    },
+    {
+      "feature": "V19",
+      "mean_drop_in_pr_auc": -0.0017265667477966763,
+      "sd": 0.00031058652624932245
+    },
+    {
+      "feature": "V13",
+      "mean_drop_in_pr_auc": -0.0019511172824340007,
+      "sd": 0.0017825642029974359
+    },
+    {
+      "feature": "V2",
+      "mean_drop_in_pr_auc": -0.0020818765571360975,
+      "sd": 0.0011680833764716484
+    },
+    {
+      "feature": "V24",
+      "mean_drop_in_pr_auc": -0.006404541047485735,
+      "sd": 0.004835374068528548
+    },
+    {
+      "feature": "V5",
+      "mean_drop_in_pr_auc": -0.008865854331979173,
+      "sd": 0.004812904207554232
+    }
+  ],
+  "impurity": [
+    {
+      "feature": "V14",
+      "importance": 0.1941543328073838
+    },
+    {
+      "feature": "V10",
+      "importance": 0.11831005519543511
+    },
+    {
+      "feature": "V12",
+      "importance": 0.10567583574821009
+    },
+    {
+      "feature": "V4",
+      "importance": 0.1048400260773141
+    },
+    {
+      "feature": "V17",
+      "importance": 0.09855040489647178
+    },
+    {
+      "feature": "V11",
+      "importance": 0.0825174239823869
+    },
+    {
+      "feature": "V7",
+      "importance": 0.03893405797556745
+    },
+    {
+      "feature": "V3",
+      "importance": 0.03329416333468559
+    },
+    {
+      "feature": "V16",
+      "importance": 0.029190034021796138
+    },
+    {
+      "feature": "V2",
+      "importance": 0.021239586310651582
+    },
+    {
+      "feature": "V21",
+      "importance": 0.016284588176022127
+    },
+    {
+      "feature": "V19",
+      "importance": 0.016105269400043844
+    },
+    {
+      "feature": "V9",
+      "importance": 0.014149621920638115
+    },
+    {
+      "feature": "V8",
+      "importance": 0.012172582694300204
+    },
+    {
+      "feature": "V18",
+      "importance": 0.011287118221543537
+    },
+    {
+      "feature": "V27",
+      "importance": 0.009317361102462757
+    },
+    {
+      "feature": "V5",
+      "importance": 0.009306986014734528
+    },
+    {
+      "feature": "V20",
+      "importance": 0.008384658782218841
+    },
+    {
+      "feature": "log_amount",
+      "importance": 0.007881788385875594
+    },
+    {
+      "feature": "V1",
+      "importance": 0.007708829657001642
+    },
+    {
+      "feature": "V26",
+      "importance": 0.007638929412087349
+    },
+    {
+      "feature": "V13",
+      "importance": 0.007087583671163748
+    },
+    {
+      "feature": "V6",
+      "importance": 0.006222761289145335
+    },
+    {
+      "feature": "V22",
+      "importance": 0.005960461002246437
+    },
+    {
+      "feature": "V15",
+      "importance": 0.0059289994706948675
+    },
+    {
+      "feature": "V28",
+      "importance": 0.005786798274093667
+    },
+    {
+      "feature": "V25",
+      "importance": 0.005360409923967623
+    },
+    {
+      "feature": "V24",
+      "importance": 0.005122616547556931
+    },
+    {
+      "feature": "V23",
+      "importance": 0.005006074730124506
+    },
+    {
+      "feature": "cycle_hour_sin",
+      "importance": 0.0035173805982558043
+    },
+    {
+      "feature": "cycle_hour_cos",
+      "importance": 0.003063260375920074
+    }
+  ],
+  "note": "permutation importance on a stratified test subsample (95 fraud + 8000 legitimate rows), 5 repeats, metric = PR-AUC drop"
+}

@@ -1,0 +1,631 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "dataset": {
+    "name": "phiusiil",
+    "source": "https://archive.ics.uci.edu/static/public/967/phiusiil+phishing+url+dataset.zip",
+    "terms": "https://archive.ics.uci.edu/dataset/967/phiusiil+phishing+url+dataset",
+    "licence": "CC BY 4.0 (credit the authors: Prasad and Chandra, Computers & Security 2024, doi:10.1016/j.cose.2023.103545)",
+    "licence_status": "confirmed",
+    "sha256": "a236549cd369cd80bd478ff8e1779cbf44c58d5c3f79f7a51a1adbed7d06d1c6",
+    "file": "PhiUSIIL_Phishing_URL_Dataset.csv",
+    "downloaded_at": "2026-10-23T08:52:12.717414+00:00",
+    "attribution_file": "data/external/phiusiil/ATTRIBUTION.txt",
+    "rows_raw": 235795
+  },
+  "cleaning": {
+    "rows_before": 235795,
+    "dropped_exact_duplicates": 425,
+    "rows_after": 235370
+  },
+  "models": {
+    "logistic_regression": {
+      "label": "Logistic regression",
+      "selected": {
+        "name": "logistic_regression {\"C\": 1.0}",
+        "params": {
+          "C": 1.0
+        }
+      },
+      "cv_pr_auc": 0.9990504629576922,
+      "cv_grid": [
+        {
+          "name": "logistic_regression {\"C\": 0.1}",
+          "family": "logistic_regression",
+          "params": {
+            "C": 0.1
+          },
+          "cv_pr_auc": 0.9990170632190594,
+          "cv_roc_auc": 0.9987485723865561
+        },
+        {
+          "name": "logistic_regression {\"C\": 1.0}",
+          "family": "logistic_regression",
+          "params": {
+            "C": 1.0
+          },
+          "cv_pr_auc": 0.9990504629576922,
+          "cv_roc_auc": 0.9988081983354213
+        }
+      ],
+      "threshold": 0.26666666666666666,
+      "test": {
+        "threshold": 0.26666666666666666,
+        "test_rows": 47284,
+        "support_legitimate": 27166,
+        "support_fraud": 20118,
+        "fraud_prevalence": 0.42547161830640384,
+        "accuracy": 0.99727180441587,
+        "precision": 0.9988022159005839,
+        "recall": 0.9947807933194155,
+        "f1": 0.9967874486365335,
+        "f2": 0.9955824851505836,
+        "confusion_matrix": {
+          "tn": 27142,
+          "fp": 24,
+          "fn": 105,
+          "tp": 20013
+        },
+        "false_positives": 24,
+        "false_negatives": 105,
+        "false_positive_rate": 0.0008834572627549142,
+        "false_negative_rate": 0.005219206680584551,
+        "flagged_share": 0.423758565265206,
+        "brier": 0.0023638922601570338,
+        "calibration_error_ece": 0.0004394329506478811,
+        "pr_auc": 0.9986094278223735,
+        "roc_auc": 0.9984699673384735,
+        "specificity": 0.999116542737245,
+        "mcc": 0.9944228194331876
+      },
+      "reliability_calibrated": [
+        {
+          "mean_predicted": 0.000857,
+          "observed_rate": 0.000846,
+          "count": 4729
+        },
+        {
+          "mean_predicted": 0.001595,
+          "observed_rate": 0.002749,
+          "count": 4729
+        },
+        {
+          "mean_predicted": 0.002101,
+          "observed_rate": 0.002115,
+          "count": 4729
+        },
+        {
+          "mean_predicted": 0.002324,
+          "observed_rate": 0.002326,
+          "count": 4729
+        },
+        {
+          "mean_predicted": 0.002948,
+          "observed_rate": 0.005711,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 0.241301,
+          "observed_rate": 0.24154,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 1.0,
+          "observed_rate": 0.999788,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 1.0,
+          "observed_rate": 1.0,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 1.0,
+          "observed_rate": 1.0,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 1.0,
+          "observed_rate": 1.0,
+          "count": 4728
+        }
+      ],
+      "calibration": {
+        "method": "isotonic regression fitted on out-of-fold training predictions",
+        "brier_raw": 0.002412538297718374,
+        "ece_raw": 0.0007978820484308544,
+        "brier_calibrated": 0.0023638922601570338,
+        "ece_calibrated": 0.0004394329506478811
+      },
+      "split": {
+        "method": "group-based 80/20 (no group on both sides)",
+        "note": "Groups are kept whole, so the class ratio of the two partitions is only approximately equal. Grouped by web domain so the same site never appears in both training and test.",
+        "test_size": 0.2,
+        "seed": 42,
+        "train_rows": 188086,
+        "test_rows": 47284,
+        "train_class_counts": {
+          "legitimate": 107684,
+          "fraud": 80402
+        },
+        "test_class_counts": {
+          "legitimate": 27166,
+          "fraud": 20118
+        },
+        "overlap_checked": true,
+        "cross_validation_folds": 4
+      },
+      "seconds": 137.4
+    },
+    "random_forest": {
+      "label": "Random forest",
+      "selected": {
+        "name": "random_forest {\"max_depth\": null, \"min_samples_leaf\": 2}",
+        "params": {
+          "min_samples_leaf": 2,
+          "max_depth": null
+        }
+      },
+      "cv_pr_auc": 0.998970828773535,
+      "cv_grid": [
+        {
+          "name": "random_forest {\"max_depth\": null, \"min_samples_leaf\": 2}",
+          "family": "random_forest",
+          "params": {
+            "min_samples_leaf": 2,
+            "max_depth": null
+          },
+          "cv_pr_auc": 0.998970828773535,
+          "cv_roc_auc": 0.9986773023633577
+        }
+      ],
+      "threshold": 0.23076923076923078,
+      "test": {
+        "threshold": 0.23076923076923078,
+        "test_rows": 47284,
+        "support_legitimate": 27166,
+        "support_fraud": 20118,
+        "fraud_prevalence": 0.42547161830640384,
+        "accuracy": 0.9975044412486254,
+        "precision": 0.999001996007984,
+        "recall": 0.9951287404314544,
+        "f1": 0.9970616066537178,
+        "f2": 0.9959009869468323,
+        "confusion_matrix": {
+          "tn": 27146,
+          "fp": 20,
+          "fn": 98,
+          "tp": 20020
+        },
+        "false_positives": 20,
+        "false_negatives": 98,
+        "false_positive_rate": 0.0007362143856290952,
+        "false_negative_rate": 0.0048712595685455815,
+        "flagged_share": 0.42382201167413924,
+        "brier": 0.0022032407429266178,
+        "calibration_error_ece": 0.00030897874156290446,
+        "pr_auc": 0.9984171214445291,
+        "roc_auc": 0.9983149627021672,
+        "specificity": 0.9992637856143709,
+        "mcc": 0.9948985711129863
+      },
+      "reliability_calibrated": [
+        {
+          "mean_predicted": 0.002367,
+          "observed_rate": 0.002538,
+          "count": 4729
+        },
+        {
+          "mean_predicted": 0.00257,
+          "observed_rate": 0.002326,
+          "count": 4729
+        },
+        {
+          "mean_predicted": 0.00257,
+          "observed_rate": 0.002326,
+          "count": 4729
+        },
+        {
+          "mean_predicted": 0.00307,
+          "observed_rate": 0.002115,
+          "count": 4729
+        },
+        {
+          "mean_predicted": 0.003772,
+          "observed_rate": 0.003596,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 0.240874,
+          "observed_rate": 0.242174,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 1.0,
+          "observed_rate": 1.0,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 1.0,
+          "observed_rate": 1.0,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 1.0,
+          "observed_rate": 1.0,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 1.0,
+          "observed_rate": 1.0,
+          "count": 4728
+        }
+      ],
+      "calibration": {
+        "method": "isotonic regression fitted on out-of-fold training predictions",
+        "brier_raw": 0.0024229583224331247,
+        "ece_raw": 0.005447746133341734,
+        "brier_calibrated": 0.0022032407429266178,
+        "ece_calibrated": 0.00030897874156290446
+      },
+      "split": {
+        "method": "group-based 80/20 (no group on both sides)",
+        "note": "Groups are kept whole, so the class ratio of the two partitions is only approximately equal. Grouped by web domain so the same site never appears in both training and test.",
+        "test_size": 0.2,
+        "seed": 42,
+        "train_rows": 188086,
+        "test_rows": 47284,
+        "train_class_counts": {
+          "legitimate": 107684,
+          "fraud": 80402
+        },
+        "test_class_counts": {
+          "legitimate": 27166,
+          "fraud": 20118
+        },
+        "overlap_checked": true,
+        "cross_validation_folds": 4
+      },
+      "seconds": 146.0
+    },
+    "hist_gradient_boosting": {
+      "label": "Gradient boosting (HistGB)",
+      "selected": {
+        "name": "hist_gradient_boosting {\"learning_rate\": 0.05, \"max_iter\": 300, \"max_leaf_nodes\": 15}",
+        "params": {
+          "max_leaf_nodes": 15,
+          "learning_rate": 0.05,
+          "max_iter": 300
+        }
+      },
+      "cv_pr_auc": 0.9990167308798344,
+      "cv_grid": [
+        {
+          "name": "hist_gradient_boosting {\"learning_rate\": 0.1, \"max_iter\": 200, \"max_leaf_nodes\": 31}",
+          "family": "hist_gradient_boosting",
+          "params": {
+            "max_leaf_nodes": 31,
+            "learning_rate": 0.1,
+            "max_iter": 200
+          },
+          "cv_pr_auc": 0.9989578140461918,
+          "cv_roc_auc": 0.9986695798026344
+        },
+        {
+          "name": "hist_gradient_boosting {\"learning_rate\": 0.05, \"max_iter\": 300, \"max_leaf_nodes\": 15}",
+          "family": "hist_gradient_boosting",
+          "params": {
+            "max_leaf_nodes": 15,
+            "learning_rate": 0.05,
+            "max_iter": 300
+          },
+          "cv_pr_auc": 0.9990167308798344,
+          "cv_roc_auc": 0.9987539283523643
+        }
+      ],
+      "threshold": 0.2,
+      "test": {
+        "threshold": 0.2,
+        "test_rows": 47284,
+        "support_legitimate": 27166,
+        "support_fraud": 20118,
+        "fraud_prevalence": 0.42547161830640384,
+        "accuracy": 0.9977159292784028,
+        "precision": 0.999650419496604,
+        "recall": 0.9949796202405806,
+        "f1": 0.9973095510936176,
+        "f2": 0.9959102849864672,
+        "confusion_matrix": {
+          "tn": 27159,
+          "fp": 7,
+          "fn": 101,
+          "tp": 20017
+        },
+        "false_positives": 7,
+        "false_negatives": 101,
+        "false_positive_rate": 0.00025767503497018334,
+        "false_negative_rate": 0.005020379759419425,
+        "flagged_share": 0.4234836308264952,
+        "brier": 0.0022043644183123924,
+        "calibration_error_ece": 0.0002884472570648218,
+        "pr_auc": 0.9986102547632394,
+        "roc_auc": 0.9984557246384591,
+        "specificity": 0.9997423249650298,
+        "mcc": 0.9953334632006483
+      },
+      "reliability_calibrated": [
+        {
+          "mean_predicted": 0.001098,
+          "observed_rate": 0.001269,
+          "count": 4729
+        },
+        {
+          "mean_predicted": 0.001616,
+          "observed_rate": 0.001903,
+          "count": 4729
+        },
+        {
+          "mean_predicted": 0.002207,
+          "observed_rate": 0.00296,
+          "count": 4729
+        },
+        {
+          "mean_predicted": 0.002432,
+          "observed_rate": 0.00296,
+          "count": 4729
+        },
+        {
+          "mean_predicted": 0.003221,
+          "observed_rate": 0.003384,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 0.241616,
+          "observed_rate": 0.242597,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 1.0,
+          "observed_rate": 1.0,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 1.0,
+          "observed_rate": 1.0,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 1.0,
+          "observed_rate": 1.0,
+          "count": 4728
+        },
+        {
+          "mean_predicted": 1.0,
+          "observed_rate": 1.0,
+          "count": 4728
+        }
+      ],
+      "calibration": {
+        "method": "isotonic regression fitted on out-of-fold training predictions",
+        "brier_raw": 0.002186538312385158,
+        "ece_raw": 0.00043177247433743145,
+        "brier_calibrated": 0.0022043644183123924,
+        "ece_calibrated": 0.0002884472570648218
+      },
+      "split": {
+        "method": "group-based 80/20 (no group on both sides)",
+        "note": "Groups are kept whole, so the class ratio of the two partitions is only approximately equal. Grouped by web domain so the same site never appears in both training and test.",
+        "test_size": 0.2,
+        "seed": 42,
+        "train_rows": 188086,
+        "test_rows": 47284,
+        "train_class_counts": {
+          "legitimate": 107684,
+          "fraud": 80402
+        },
+        "test_class_counts": {
+          "legitimate": 27166,
+          "fraud": 20118
+        },
+        "overlap_checked": true,
+        "cross_validation_folds": 4
+      },
+      "seconds": 146.6
+    }
+  },
+  "split_seed": 42,
+  "dummy": {
+    "label": "Dummy (training prior)",
+    "pr_auc": 0.42547161830640384,
+    "roc_auc": 0.5,
+    "accuracy": 0.5745283816935962,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "mcc": 0.0
+  },
+  "bootstrap": {
+    "B": 1000,
+    "seed": 7,
+    "ci95": {
+      "logistic_regression": {
+        "pr_auc": {
+          "lo": 0.9982699289005149,
+          "hi": 0.9989368747341827,
+          "sd": 0.00017399773844583286
+        },
+        "roc_auc": {
+          "lo": 0.9980642868134109,
+          "hi": 0.9988575860834168,
+          "sd": 0.00020717682454392784
+        },
+        "precision": {
+          "lo": 0.9983041421291373,
+          "hi": 0.9992011991996529,
+          "sd": 0.00022995186143412916
+        },
+        "recall": {
+          "lo": 0.9938363654438811,
+          "hi": 0.995774927925241,
+          "sd": 0.0004943468251429397
+        },
+        "f1": {
+          "lo": 0.996213626212438,
+          "hi": 0.9973129471441653,
+          "sd": 0.00028058186522925767
+        },
+        "mcc": {
+          "lo": 0.9934283700849561,
+          "hi": 0.9953319871276194,
+          "sd": 0.00048589524580669566
+        }
+      },
+      "random_forest": {
+        "pr_auc": {
+          "lo": 0.9980325782988031,
+          "hi": 0.9987902941487731,
+          "sd": 0.00019346207136693164
+        },
+        "roc_auc": {
+          "lo": 0.9978591615823851,
+          "hi": 0.9987468114896388,
+          "sd": 0.0002234810646977132
+        },
+        "precision": {
+          "lo": 0.998551550648266,
+          "hi": 0.9994011393322747,
+          "sd": 0.00022805601719998064
+        },
+        "recall": {
+          "lo": 0.9942327766179541,
+          "hi": 0.9960731683069888,
+          "sd": 0.0004756680510270158
+        },
+        "f1": {
+          "lo": 0.9965611676073597,
+          "hi": 0.9975855661659199,
+          "sd": 0.0002669094591799715
+        },
+        "mcc": {
+          "lo": 0.9940331483273462,
+          "hi": 0.9958062813023841,
+          "sd": 0.0004623220536196513
+        }
+      },
+      "hist_gradient_boosting": {
+        "pr_auc": {
+          "lo": 0.9982729840240011,
+          "hi": 0.998940072433414,
+          "sd": 0.00017065838639271754
+        },
+        "roc_auc": {
+          "lo": 0.9980401414206063,
+          "hi": 0.9988556625229777,
+          "sd": 0.00020776778700391617
+        },
+        "precision": {
+          "lo": 0.9993512957865086,
+          "hi": 0.9999000700758532,
+          "sd": 0.0001320372121660528
+        },
+        "recall": {
+          "lo": 0.9940351923650462,
+          "hi": 0.9959737548464062,
+          "sd": 0.00048129817239695664
+        },
+        "f1": {
+          "lo": 0.9968347213602913,
+          "hi": 0.9978333982897479,
+          "sd": 0.0002537713315659743
+        },
+        "mcc": {
+          "lo": 0.9945126849338994,
+          "hi": 0.9962390683032146,
+          "sd": 0.00043870767012823734
+        }
+      }
+    },
+    "paired_differences": {
+      "logistic_regression - random_forest [pr_auc]": {
+        "mean": 0.00019395576172928663,
+        "lo": -1.9498676454157702e-05,
+        "hi": 0.0004185985571046685,
+        "p_two_sided": 0.076
+      },
+      "logistic_regression - random_forest [roc_auc]": {
+        "mean": 0.00015933322411977347,
+        "lo": -0.0001299914433284699,
+        "hi": 0.00046374990131276526,
+        "p_two_sided": 0.268
+      },
+      "logistic_regression - random_forest [f1]": {
+        "mean": -0.000280687108748354,
+        "lo": -0.0005720290357158458,
+        "hi": 2.439929630534132e-05,
+        "p_two_sided": 0.06
+      },
+      "logistic_regression - hist_gradient_boosting [pr_auc]": {
+        "mean": 1.5358694697498177e-07,
+        "lo": -0.0001490891960690438,
+        "hi": 0.00012990726474705058,
+        "p_two_sided": 0.914
+      },
+      "logistic_regression - hist_gradient_boosting [roc_auc]": {
+        "mean": 1.5609747626296743e-05,
+        "lo": -0.00015207227131674438,
+        "hi": 0.00019356831559728117,
+        "p_two_sided": 0.862
+      },
+      "logistic_regression - hist_gradient_boosting [f1]": {
+        "mean": -0.0005270283572962701,
+        "lo": -0.0007708509050282474,
+        "hi": -0.0002981645445287201,
+        "p_two_sided": 0.0
+      },
+      "random_forest - hist_gradient_boosting [pr_auc]": {
+        "mean": -0.00019380217478231164,
+        "lo": -0.0003692331999706283,
+        "hi": -2.8568699087624952e-05,
+        "p_two_sided": 0.02
+      },
+      "random_forest - hist_gradient_boosting [roc_auc]": {
+        "mean": -0.0001437234764934767,
+        "lo": -0.00040127499025720547,
+        "hi": 9.860521846223872e-05,
+        "p_two_sided": 0.262
+      },
+      "random_forest - hist_gradient_boosting [f1]": {
+        "mean": -0.00024634124854791605,
+        "lo": -0.0004716708080552662,
+        "hi": -4.846855222251367e-05,
+        "p_two_sided": 0.024
+      }
+    }
+  },
+  "mcnemar": {
+    "logistic_regression vs random_forest": {
+      "a_right_b_wrong": 13,
+      "b_right_a_wrong": 24,
+      "p_value": 0.09887174959294498
+    },
+    "logistic_regression vs hist_gradient_boosting": {
+      "a_right_b_wrong": 3,
+      "b_right_a_wrong": 24,
+      "p_value": 4.9233436584472656e-05
+    },
+    "random_forest vs hist_gradient_boosting": {
+      "a_right_b_wrong": 4,
+      "b_right_a_wrong": 14,
+      "p_value": 0.0308837890625
+    }
+  }
+}

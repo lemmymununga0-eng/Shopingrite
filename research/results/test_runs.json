@@ -1,0 +1,13 @@
+{
+  "run_date": "2026-10-23",
+  "environment": "Windows 11, Python 3.14.0, local servers",
+  "backend_passed": 564,
+  "backend_failed": 0,
+  "backend_seconds": 714,
+  "vitest_passed": 236,
+  "vitest_files": 13,
+  "vitest_failed": 0,
+  "playwright_passed": 25,
+  "playwright_failed": 0,
+  "note": "Counts copied from the console summaries of: python -m pytest -q (backend), npx vitest run and npx playwright test (frontend)."
+}

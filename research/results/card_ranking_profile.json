@@ -1,0 +1,46 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "fraud_rows": 95,
+  "models": {
+    "logistic_regression": {
+      "max_recall_at_precision_0_9": 0.0,
+      "max_recall_at_precision_0_5": 0.7894736842105263,
+      "label": "Logistic regression",
+      "frauds_above_99_9pct_of_legit": 75,
+      "frauds_above_99pct_of_legit": 81,
+      "frauds_above_90pct_of_legit": 84,
+      "frauds_below_median_legit": 3,
+      "frauds_with_score_below_0_05": 20
+    },
+    "random_forest": {
+      "max_recall_at_precision_0_9": 0.7894736842105263,
+      "max_recall_at_precision_0_5": 0.8210526315789474,
+      "label": "Random forest",
+      "frauds_above_99_9pct_of_legit": 77,
+      "frauds_above_99pct_of_legit": 81,
+      "frauds_above_90pct_of_legit": 82,
+      "frauds_below_median_legit": 13,
+      "frauds_with_score_below_0_05": 18
+    },
+    "hist_gradient_boosting": {
+      "max_recall_at_precision_0_9": 0.0,
+      "max_recall_at_precision_0_5": 0.7789473684210526,
+      "label": "Gradient boosting (HistGB)",
+      "frauds_above_99_9pct_of_legit": 74,
+      "frauds_above_99pct_of_legit": 80,
+      "frauds_above_90pct_of_legit": 84,
+      "frauds_below_median_legit": 1,
+      "frauds_with_score_below_0_05": 21
+    }
+  }
+}

@@ -277,7 +277,94 @@ def _url_pre():
     return Pipeline([("features", FunctionTransformer(_url_features, validate=False)), ("scale", StandardScaler())])
 
 
-def phiusiil_task(df: pd.DataFrame, dataset: dict, fast: bool = False, is_fixture: bool = False, max_rows: int | None = None) -> TaskSpec:
+# Host-name-only features. In the PhiUSIIL data every legitimate address is "https://www.<domain>" with no path and no trailing slash, so the
+# protocol, the "www." prefix, the path and the trailing slash separate the classes by how the lists were built, not by anything about phishing
+# (see docs/ML_EVALUATION.md). The canonical host below ignores all of them.
+HOST_FEATURE_NAMES = ["host_len", "n_subdomains", "host_is_ip", "has_punycode", "host_digit_ratio", "host_hyphens", "host_entropy", "longest_label", "tld_len", "tld_common"]
+
+
+def canonical_host(url: str) -> str:
+    raw = (url or "").strip()
+    try:
+        parsed = urlsplit(raw if "://" in raw else "http://" + raw)
+        host = (parsed.hostname or "").lower()
+    except ValueError:
+        host = ""
+    return host[4:] if host.startswith("www.") else host
+
+
+def url_host_features_one(url: str) -> dict:
+    host = canonical_host(url)
+    labels = [x for x in host.split(".") if x]
+    tld = labels[-1] if labels else ""
+    return {"host_len": len(host), "n_subdomains": max(len(labels) - 2, 0), "host_is_ip": int(bool(re.fullmatch(r"\d{1,3}(\.\d{1,3}){3}", host))),
+            "has_punycode": int("xn--" in host), "host_digit_ratio": sum(c.isdigit() for c in host) / max(len(host), 1), "host_hyphens": host.count("-"),
+            "host_entropy": _entropy(host), "longest_label": max((len(x) for x in labels), default=0), "tld_len": len(tld), "tld_common": int(tld in _COMMON_TLDS)}
+
+
+@lru_cache(maxsize=500_000)
+def _url_host_row(url: str) -> tuple:
+    f = url_host_features_one(url)
+    return tuple(f[k] for k in HOST_FEATURE_NAMES)
+
+
+def _url_host_features(X: pd.DataFrame) -> pd.DataFrame:
+    return pd.DataFrame([_url_host_row(u) for u in X["url"].astype(str)], columns=HOST_FEATURE_NAMES)
+
+
+def _url_host_pre():
+    return Pipeline([("features", FunctionTransformer(_url_host_features, validate=False)), ("scale", StandardScaler())])
+
+
+# ---- robustness gate: cosmetic changes must not decide the verdict
+def _rebuild(parsed, scheme=None, netloc=None, path=None, query=None) -> str:
+    from urllib.parse import urlunsplit
+    return urlunsplit((scheme if scheme is not None else parsed.scheme, netloc if netloc is not None else parsed.netloc,
+                       path if path is not None else parsed.path, query if query is not None else parsed.query, ""))
+
+
+def _parse(u: str):
+    return urlsplit(u if "://" in u else "http://" + u)
+
+
+COSMETIC_CHANGES_LEGIT = {
+    "remove the www prefix": lambda u: _rebuild(_parse(u), netloc=_parse(u).netloc[4:] if _parse(u).netloc.lower().startswith("www.") else _parse(u).netloc),
+    "use http instead of https": lambda u: _rebuild(_parse(u), scheme="http"),
+    "add a trailing slash": lambda u: _rebuild(_parse(u), path=_parse(u).path or "/"),
+    "add a path": lambda u: _rebuild(_parse(u), path=_parse(u).path if _parse(u).path not in ("", "/") else "/products/index.html"),
+}
+
+
+def _as_legit_template(u: str) -> str:
+    p = _parse(u)
+    host = p.netloc[4:] if p.netloc.lower().startswith("www.") else p.netloc
+    return _rebuild(p, scheme="https", netloc="www." + host, path="", query="")
+
+
+def url_invariance_checks(score, legit_urls: list[str], phishing_urls: list[str], threshold: float, max_rise: float = 0.05, min_keep: float = 0.8) -> list[dict]:
+    """`score(list_of_urls) -> probabilities`. A model that learned how a dataset's addresses were formatted will flag ordinary legitimate
+    addresses after a cosmetic change, and will wave through phishing addresses dressed in the legitimate format. Both are refused here."""
+    checks = []
+    base = float((np.asarray(score(legit_urls)) >= threshold).mean()) if legit_urls else 0.0
+    for name, fn in COSMETIC_CHANGES_LEGIT.items():
+        share = float((np.asarray(score([fn(u) for u in legit_urls])) >= threshold).mean()) if legit_urls else 0.0
+        checks.append({"check": f"legitimate addresses stay unflagged when we {name}", "passed": bool(share - base <= max_rise),
+                       "detail": f"flagged {100 * share:.1f}% (unchanged addresses: {100 * base:.1f}%); allowed rise {100 * max_rise:.0f} points"})
+    if phishing_urls:
+        kept0 = float((np.asarray(score(phishing_urls)) >= threshold).mean())
+        kept1 = float((np.asarray(score([_as_legit_template(u) for u in phishing_urls])) >= threshold).mean())
+        checks.append({"check": "phishing addresses are still flagged when rewritten as https://www.<host>", "passed": bool(kept1 >= min_keep * kept0),
+                       "detail": f"flagged {100 * kept1:.1f}% after rewriting, {100 * kept0:.1f}% before; must keep {int(100 * min_keep)}% of the original rate"})
+    return checks
+
+
+def phiusiil_task(df: pd.DataFrame, dataset: dict, fast: bool = False, is_fixture: bool = False, max_rows: int | None = None,
+                  feature_set: str = "host") -> TaskSpec:
+    """feature_set "host" (default): 10 features of the canonical host name only. "lexical": the 31 whole-address features, which the paper
+    shows mostly measure how the dataset's addresses were formatted; kept for the comparison, never promoted without passing the invariance gate."""
+    if feature_set not in ("host", "lexical"):
+        raise ValueError("feature_set must be 'host' or 'lexical'")
+    host_only = feature_set == "host"
     for c in ("URL", "label", "Domain"):
         if c not in df.columns:
             raise ValueError(f"PhiUSIIL file is missing column '{c}'")
@@ -292,16 +379,20 @@ def phiusiil_task(df: pd.DataFrame, dataset: dict, fast: bool = False, is_fixtur
     return TaskSpec(
         model_name="url_phishing", task="ScamWatch: phishing vs legitimate URL (text of the address only)", dataset={**dataset, "rows_raw": int(len(df))},
         X=work[["url"]].reset_index(drop=True), y=work["is_phishing"].rename("is_phishing").reset_index(drop=True), input_features=["url"],
-        feature_types={"url": "string"}, preprocessor=_url_pre,
+        feature_types={"url": "string"}, preprocessor=_url_host_pre if host_only else _url_pre,
         candidates=[c for c in candidates_default(fast) if c.name != "random_forest"],
         target_definition="is_phishing = 1 means the URL was labelled phishing by the dataset authors (their label 1 = legitimate is inverted here); 0 = legitimate",
-        preprocessing_description=f"{len(URL_FEATURE_NAMES)} lexical features are computed from the URL string itself (lengths, character counts, host structure, "
-                                  "keywords, entropy), then standardised with training-partition statistics only.",
+        preprocessing_description=(f"{len(HOST_FEATURE_NAMES)} features of the canonical host name only (length, subdomains, digits, hyphens, entropy, longest label, top-level domain); "
+                                   "scheme, a leading www, port, path, query and trailing slash are ignored; standardised with training-partition statistics only." if host_only else
+                                   f"{len(URL_FEATURE_NAMES)} lexical features are computed from the URL string itself (lengths, character counts, host structure, "
+                                   "keywords, entropy), then standardised with training-partition statistics only."),
         excluded_features=[{"name": "all page-content columns (LineOfCode, HasTitle, NoOfJS, ...)", "reason": "They require fetching the page; ScamWatch never opens a submitted link."},
                            {"name": "URLSimilarityIndex, CharContinuationRate, TLDLegitimateProb, URLCharProb", "reason": "Computed by the dataset authors from dataset-wide statistics: not reproducible for a single new URL."},
-                           {"name": "FILENAME, Domain, Title", "reason": "Identifiers / content. Domain is used only to keep each site on one side of the split."}],
-        derived_features=[{"name": n, "from": "url"} for n in URL_FEATURE_NAMES[:6]] + [{"name": "... and the rest of the lexical set", "from": "url"}],
-        cleaning=dup, groups=work["domain"].to_numpy(), min_pr_auc=0.85, is_fixture=is_fixture,
+                           {"name": "FILENAME, Domain, Title", "reason": "Identifiers / content. Domain is used only to keep each site on one side of the split."}]
+        + ([{"name": "scheme, www prefix, port, path, query, trailing slash, keywords", "reason": "In this dataset every legitimate address is https://www.<domain> with no path, so these cues "
+            "separate the classes by how the lists were built. A model using them flags ordinary legitimate links after a cosmetic change."}] if host_only else []),
+        derived_features=[{"name": n, "from": "url"} for n in (HOST_FEATURE_NAMES if host_only else URL_FEATURE_NAMES[:6])] + ([] if host_only else [{"name": "... and the rest of the lexical set", "from": "url"}]),
+        cleaning={**dup, "feature_set": feature_set}, groups=work["domain"].to_numpy(), min_pr_auc=0.8 if host_only else 0.85, is_fixture=is_fixture, max_fpr=0.01 if host_only else None,
         split_override_note="Grouped by web domain so the same site never appears in both training and test.",
         source_note="PhiUSIIL Phishing URL dataset (UCI #967), CC BY 4.0.",
         limitations=["URL text only: a clean-looking address on a compromised site is invisible to this model. A low score is NOT evidence that a site is safe.",
@@ -323,9 +414,9 @@ def load_paysim(root: Path = EXTERNAL_DIR, fast: bool = False) -> TaskSpec:
     return paysim_task(pd.read_csv(path), meta, fast)
 
 
-def load_phiusiil(root: Path = EXTERNAL_DIR, fast: bool = False, max_rows: int | None = None) -> TaskSpec:
+def load_phiusiil(root: Path = EXTERNAL_DIR, fast: bool = False, max_rows: int | None = None, feature_set: str = "host") -> TaskSpec:
     path, meta = verified_file("phiusiil", "PhiUSIIL_Phishing_URL_Dataset.csv", root)
-    return phiusiil_task(pd.read_csv(path, usecols=["URL", "label", "Domain"]), meta, fast, max_rows=max_rows)
+    return phiusiil_task(pd.read_csv(path, usecols=["URL", "label", "Domain"]), meta, fast, max_rows=max_rows, feature_set=feature_set)
 
 
 LOADERS = {"creditcard-openml": load_creditcard, "paysim": load_paysim, "phiusiil": load_phiusiil}

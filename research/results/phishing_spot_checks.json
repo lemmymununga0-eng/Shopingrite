@@ -1,0 +1,115 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "original_threshold": 0.26666666666666666,
+  "host_model_version": "url-phishing-20261023-143233",
+  "host_model_threshold": 0.8345588235294118,
+  "host_model_experimental": true,
+  "rows": [
+    {
+      "kind": "legitimate-looking",
+      "url": "https://www.example.co.zm",
+      "original_probability": 0.0026422307173375307,
+      "original_flagged": false,
+      "host_probability": 0.127726,
+      "host_flagged": false
+    },
+    {
+      "kind": "legitimate-looking",
+      "url": "https://example.co.zm",
+      "original_probability": 1.0,
+      "original_flagged": true,
+      "host_probability": 0.127726,
+      "host_flagged": false
+    },
+    {
+      "kind": "legitimate-looking",
+      "url": "https://google.com",
+      "original_probability": 1.0,
+      "original_flagged": true,
+      "host_probability": 0.205336,
+      "host_flagged": false
+    },
+    {
+      "kind": "legitimate-looking",
+      "url": "https://mail.google.com/mail/u/0/",
+      "original_probability": 1.0,
+      "original_flagged": true,
+      "host_probability": 0.522109,
+      "host_flagged": false
+    },
+    {
+      "kind": "legitimate-looking",
+      "url": "https://github.com/lemmymununga0-eng/Shopingrite",
+      "original_probability": 1.0,
+      "original_flagged": true,
+      "host_probability": 0.205336,
+      "host_flagged": false
+    },
+    {
+      "kind": "hypothetical small business",
+      "url": "https://my-small-grocery-lusaka-fresh-produce.com",
+      "original_probability": 1.0,
+      "original_flagged": true,
+      "host_probability": 0.927609,
+      "host_flagged": true
+    },
+    {
+      "kind": "phishing in the data",
+      "url": "https://doncov.line.pm/",
+      "original_probability": 1.0,
+      "original_flagged": true,
+      "host_probability": 0.286915,
+      "host_flagged": false
+    },
+    {
+      "kind": "same host, legitimate format",
+      "url": "https://www.doncov.line.pm",
+      "original_probability": 0.007063882063882064,
+      "original_flagged": false,
+      "host_probability": 0.286915,
+      "host_flagged": false
+    },
+    {
+      "kind": "phishing in the data",
+      "url": "https://sparkasse-auth.com/",
+      "original_probability": 1.0,
+      "original_flagged": true,
+      "host_probability": 0.286915,
+      "host_flagged": false
+    },
+    {
+      "kind": "same host, legitimate format",
+      "url": "https://www.sparkasse-auth.com",
+      "original_probability": 0.003800475059382423,
+      "original_flagged": false,
+      "host_probability": 0.286915,
+      "host_flagged": false
+    },
+    {
+      "kind": "phishing in the data",
+      "url": "https://att-107489-107815yoomimi.weeblysite.com/",
+      "original_probability": 1.0,
+      "original_flagged": true,
+      "host_probability": 1.0,
+      "host_flagged": true
+    },
+    {
+      "kind": "same host, legitimate format",
+      "url": "https://www.att-107489-107815yoomimi.weeblysite.com",
+      "original_probability": 1.0,
+      "original_flagged": true,
+      "host_probability": 1.0,
+      "host_flagged": true
+    }
+  ]
+}

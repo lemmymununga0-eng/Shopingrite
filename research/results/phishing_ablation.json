@@ -1,0 +1,120 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "model": "logistic regression (class-weighted, C=1), threshold 0.5",
+  "rows": [
+    {
+      "features": "All 31 URL-text features",
+      "n_features": 31,
+      "pr_auc": 0.9987767119087797,
+      "roc_auc": 0.9984844259478661,
+      "precision": 0.9997501249375312,
+      "recall": 0.9943831394770852,
+      "f1": 0.9970594098883573,
+      "mcc": 0.9949027863738418,
+      "accuracy": 0.9975044412486254
+    },
+    {
+      "features": "Without protocol and prefix features (is_https, has_port, has_www)",
+      "n_features": 28,
+      "pr_auc": 0.9737172725121896,
+      "roc_auc": 0.9775729805353597,
+      "precision": 0.9437267838332317,
+      "recall": 0.8461079630181927,
+      "f1": 0.8922552745380685,
+      "mcc": 0.8231786312514769,
+      "accuracy": 0.9130572709584638
+    },
+    {
+      "features": "Host-name features only",
+      "n_features": 10,
+      "pr_auc": 0.8690544069934154,
+      "roc_auc": 0.8521565032376855,
+      "precision": 0.893393584521385,
+      "recall": 0.6977333730987175,
+      "f1": 0.7835333519397154,
+      "mcc": 0.6676472738191712,
+      "accuracy": 0.8359698841045596
+    },
+    {
+      "features": "Path and query features only",
+      "n_features": 8,
+      "pr_auc": 0.7699373375622024,
+      "roc_auc": 0.7997812903867183,
+      "precision": 1.0,
+      "recall": 0.5995625807734367,
+      "f1": 0.7496581727781231,
+      "mcc": 0.6800222173120679,
+      "accuracy": 0.8296252432112342
+    },
+    {
+      "features": "URL length only",
+      "n_features": 1,
+      "pr_auc": 0.7554736651051033,
+      "roc_auc": 0.7275623945717249,
+      "precision": 0.7023973216954624,
+      "recall": 0.5840043741922656,
+      "f1": 0.6377527479983716,
+      "mcc": 0.41440586897310355,
+      "accuracy": 0.7177269266559513
+    },
+    {
+      "features": "is_https only",
+      "n_features": 1,
+      "pr_auc": 0.7130785042809643,
+      "roc_auc": 0.7502982403817477,
+      "precision": 1.0,
+      "recall": 0.5005964807634954,
+      "f1": 0.6671966610354765,
+      "mcc": 0.604518230970822,
+      "accuracy": 0.7875179764825311
+    },
+    {
+      "features": "has_www only",
+      "n_features": 1,
+      "pr_auc": 0.7630263191523282,
+      "roc_auc": 0.7937667760214733,
+      "precision": 1.0,
+      "recall": 0.5875335520429467,
+      "f1": 0.7401841067067444,
+      "mcc": 0.6708652945865331,
+      "accuracy": 0.8245072328906183
+    },
+    {
+      "features": "is_https + URL length",
+      "n_features": 2,
+      "pr_auc": 0.9521548352924784,
+      "roc_auc": 0.9479090291011224,
+      "precision": 0.9418798665183538,
+      "recall": 0.8417834774828512,
+      "f1": 0.8890230458291773,
+      "mcc": 0.8181511021391888,
+      "accuracy": 0.9105828610100668
+    },
+    {
+      "features": "Three collection cues (is_https, has_www, path_depth)",
+      "n_features": 3,
+      "pr_auc": 0.9958876584668516,
+      "roc_auc": 0.9964211154190277,
+      "precision": 1.0,
+      "recall": 0.9928422308380555,
+      "f1": 0.9964082609997007,
+      "mcc": 0.9937842715755033,
+      "accuracy": 0.9969545723712038
+    }
+  ],
+  "split": {
+    "train_rows": 188086,
+    "test_rows": 47284,
+    "test_phishing": 20118
+  }
+}

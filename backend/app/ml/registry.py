@@ -162,6 +162,14 @@ def rollback(name: str, root: Path = ARTIFACT_ROOT) -> dict:
     return pointer
 
 
+def _single_thread(model) -> None:
+    """Scoring one order at a time is faster without a thread pool: a forest created with n_jobs=-1 would start one per request."""
+    base = getattr(model, "base", model)
+    for _, step in getattr(base, "steps", []):
+        if hasattr(step, "n_jobs"):
+            step.n_jobs = 1
+
+
 def load_current(name: str, expected_features: list[str] | None = None, root: Path = ARTIFACT_ROOT) -> LoadResult:
     """Load the live version of `name`, or say precisely why it cannot be used. Never raises for an unusable model."""
     try:
@@ -193,6 +201,7 @@ def load_current(name: str, expected_features: list[str] | None = None, root: Pa
         return LoadResult(SCHEMA_INCOMPATIBLE, "The model was trained for a different input schema than the application expects. Retrain it.", metadata=meta)
     try:
         pipeline = joblib.load(d / "model.joblib")        # trusted: our own folder, checksum verified above
+        _single_thread(pipeline)
     except Exception as exc:
         return LoadResult(FAILED_VALIDATION, f"The model file could not be loaded ({type(exc).__name__}).", metadata=meta)
     return LoadResult(READY, "", pipeline, meta)

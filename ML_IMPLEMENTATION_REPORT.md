@@ -115,3 +115,20 @@ Playwright first failed twice on my own new selectors (label substring ambiguity
 4. Real Flutterwave payments are only tested against a fake; live keys are required.
 5. Model artifacts are git-ignored; a fresh deployment shows "Not trained" until trained there.
 6. Legacy `/pca-demo` still uses the older loader.
+
+---
+
+# Phase 3: the phishing model was an artefact, and what was done about it (2026-10-23)
+
+While preparing the journal paper, a perturbation test showed that the `url_phishing` model I had promoted (PR-AUC 0.9986) learned how the dataset's addresses were formatted,
+not phishing. Every legitimate address in PhiUSIIL is `https://www.<domain>` with no path or trailing slash. Removing "www." from held-out legitimate addresses took the flagged share from
+0.1% to 100%; rewriting phishing addresses in the legitimate format cut detection from 99.5% to 29.6%. Details and numbers: `docs/ML_EVALUATION.md`, `research/results/phishing_*.json`.
+
+| Item | Status |
+|---|---|
+| Old model removed from the registry (replaced by a host-name-only model) | DONE |
+| Robustness gate (`url_invariance_checks`) in the training entry point; the old feature set fails all 5 checks | DONE, tested |
+| URL models are always `experimental`; ScamWatch `ml_url` skips them (no verdict is ever shown) | DONE, tested |
+| Replacement: host-name features, threshold at 1% false alarms (held-out PR-AUC 0.863, precision 0.979, recall 0.523, 0.8% false alarms on benchmark data) | DONE, weak, experimental |
+| Model scoring made single-threaded and single-pass (card model: median 330 ms to about 26 ms) | DONE, tested |
+| A usable URL model | **BLOCKED**: needs legitimate addresses sampled like real traffic (paths, http, no "www.", small sites) |

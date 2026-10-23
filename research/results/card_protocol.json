@@ -1,0 +1,95 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "random_forest_params": {
+    "min_samples_leaf": 2,
+    "max_depth": null
+  },
+  "rows": [
+    {
+      "variant": "A. Correct protocol (deduplicated, split first)",
+      "note": "the protocol used in this paper",
+      "train_rows": 226980,
+      "test_rows": 56746,
+      "test_fraud": 95,
+      "pr_auc": 0.8100652303652682,
+      "roc_auc": 0.928608869263236,
+      "precision": 0.9577464788732394,
+      "recall": 0.7157894736842105,
+      "f1": 0.8192771084337349,
+      "mcc": 0.8277397855196708,
+      "confusion_matrix": {
+        "tn": 56648,
+        "fp": 3,
+        "fn": 27,
+        "tp": 68
+      },
+      "best_threshold_on_test": {
+        "threshold": 0.21316850188047187,
+        "f1": 0.8522727272727273,
+        "precision": 0.9259259259259259,
+        "recall": 0.7894736842105263
+      }
+    },
+    {
+      "variant": "B. Oversample fraud before splitting (x20)",
+      "note": "identical fraud rows appear in training and test (data leakage)",
+      "train_rows": 234170,
+      "test_rows": 58543,
+      "test_fraud": 1892,
+      "pr_auc": 1.0,
+      "roc_auc": 1.0,
+      "precision": 0.9984168865435357,
+      "recall": 1.0,
+      "f1": 0.9992078162133615,
+      "mcc": 0.999181672450714,
+      "confusion_matrix": {
+        "tn": 56648,
+        "fp": 3,
+        "fn": 0,
+        "tp": 1892
+      },
+      "best_threshold_on_test": {
+        "threshold": 0.9990919233056098,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0
+      }
+    },
+    {
+      "variant": "C. Keep exact duplicate rows",
+      "note": "1,081 duplicate rows kept",
+      "train_rows": 227845,
+      "test_rows": 56962,
+      "test_fraud": 98,
+      "pr_auc": 0.8646680976863952,
+      "roc_auc": 0.9568275326450218,
+      "precision": 0.9506172839506173,
+      "recall": 0.7857142857142857,
+      "f1": 0.8603351955307262,
+      "mcc": 0.8640351019464072,
+      "confusion_matrix": {
+        "tn": 56860,
+        "fp": 4,
+        "fn": 21,
+        "tp": 77
+      },
+      "best_threshold_on_test": {
+        "threshold": 0.3931242300329736,
+        "f1": 0.8743169398907105,
+        "precision": 0.9411764705882353,
+        "recall": 0.8163265306122449
+      }
+    }
+  ],
+  "note": "All variants use the same random-forest settings. Precision, recall and F1 are at a fixed raw-score threshold of 0.5."
+}

@@ -49,3 +49,13 @@ backend/data/external/
 
 # trained model artifacts (regenerate with python -m app.ml.train; never commit)
 backend/artifacts/
+
+# research scratch (large intermediate arrays; regenerate with research/*.py)
+research/results/_scratch/
+
+# generated paper intermediates (rebuilt by research/paper/build.py)
+research/paper/content.json
+research/paper/cover_content.json
+research/paper/node_modules/
+research/paper/package.json
+research/paper/package-lock.json

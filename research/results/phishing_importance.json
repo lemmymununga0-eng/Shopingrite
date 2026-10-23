@@ -1,0 +1,297 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "coefficients": [
+    {
+      "feature": "path_depth",
+      "standardised_coefficient": 8.637376580005435
+    },
+    {
+      "feature": "is_https",
+      "standardised_coefficient": -6.690386760543398
+    },
+    {
+      "feature": "has_www",
+      "standardised_coefficient": -5.160695861613956
+    },
+    {
+      "feature": "host_len",
+      "standardised_coefficient": 3.615711181245727
+    },
+    {
+      "feature": "longest_label",
+      "standardised_coefficient": -3.2346888041241337
+    },
+    {
+      "feature": "n_special",
+      "standardised_coefficient": 1.6593666386811532
+    },
+    {
+      "feature": "host_digit_ratio",
+      "standardised_coefficient": 1.5101941405840476
+    },
+    {
+      "feature": "url_len",
+      "standardised_coefficient": 1.046936893488621
+    },
+    {
+      "feature": "n_subdomains",
+      "standardised_coefficient": -0.8773092242922222
+    },
+    {
+      "feature": "letter_ratio",
+      "standardised_coefficient": 0.8115963546729971
+    },
+    {
+      "feature": "path_len",
+      "standardised_coefficient": 0.8017414156230728
+    },
+    {
+      "feature": "digit_ratio",
+      "standardised_coefficient": 0.7307578259797916
+    },
+    {
+      "feature": "tld_common",
+      "standardised_coefficient": -0.5164816778500434
+    },
+    {
+      "feature": "n_digits",
+      "standardised_coefficient": -0.4753079821626159
+    },
+    {
+      "feature": "keyword_count",
+      "standardised_coefficient": 0.46637154841722595
+    },
+    {
+      "feature": "host_hyphens",
+      "standardised_coefficient": 0.4627355684379924
+    },
+    {
+      "feature": "n_dots",
+      "standardised_coefficient": 0.31818161420184016
+    },
+    {
+      "feature": "host_is_ip",
+      "standardised_coefficient": -0.3122456575044239
+    },
+    {
+      "feature": "n_qmark",
+      "standardised_coefficient": 0.2771248254630429
+    },
+    {
+      "feature": "has_punycode",
+      "standardised_coefficient": 0.20293144105183566
+    },
+    {
+      "feature": "host_entropy",
+      "standardised_coefficient": 0.17533950269453363
+    },
+    {
+      "feature": "query_len",
+      "standardised_coefficient": -0.17159229152040917
+    },
+    {
+      "feature": "n_amp",
+      "standardised_coefficient": -0.16788678276106064
+    },
+    {
+      "feature": "n_hyphens",
+      "standardised_coefficient": 0.1450971884306652
+    },
+    {
+      "feature": "has_double_slash_in_path",
+      "standardised_coefficient": -0.1415438636740319
+    },
+    {
+      "feature": "tld_len",
+      "standardised_coefficient": 0.14020345943439366
+    },
+    {
+      "feature": "n_percent",
+      "standardised_coefficient": -0.11451965932286869
+    },
+    {
+      "feature": "n_at",
+      "standardised_coefficient": -0.1033955353358778
+    },
+    {
+      "feature": "n_equals",
+      "standardised_coefficient": -0.06061766800983395
+    },
+    {
+      "feature": "has_port",
+      "standardised_coefficient": -0.026624473060777653
+    },
+    {
+      "feature": "n_underscores",
+      "standardised_coefficient": -0.0034366420826241733
+    }
+  ],
+  "permutation": [
+    {
+      "feature": "path_depth",
+      "mean_drop_in_pr_auc": 0.16127048964909055,
+      "sd": 0.0034613116793660633
+    },
+    {
+      "feature": "is_https",
+      "mean_drop_in_pr_auc": 0.13964376827547523,
+      "sd": 0.002502736715223803
+    },
+    {
+      "feature": "has_www",
+      "mean_drop_in_pr_auc": 0.01896467980215224,
+      "sd": 0.0008913595718432381
+    },
+    {
+      "feature": "host_len",
+      "mean_drop_in_pr_auc": 0.011922769836797497,
+      "sd": 0.0009441768636871149
+    },
+    {
+      "feature": "longest_label",
+      "mean_drop_in_pr_auc": 0.003020545378746542,
+      "sd": 0.0006249476475667335
+    },
+    {
+      "feature": "n_special",
+      "mean_drop_in_pr_auc": 0.0006610193655701479,
+      "sd": 0.00033449337522814895
+    },
+    {
+      "feature": "tld_common",
+      "mean_drop_in_pr_auc": 0.00019477999121582102,
+      "sd": 0.00010603699353009313
+    },
+    {
+      "feature": "host_digit_ratio",
+      "mean_drop_in_pr_auc": 0.00017778819833227377,
+      "sd": 6.999330421159566e-05
+    },
+    {
+      "feature": "digit_ratio",
+      "mean_drop_in_pr_auc": 0.00014540273933607572,
+      "sd": 5.6317438687756595e-05
+    },
+    {
+      "feature": "host_hyphens",
+      "mean_drop_in_pr_auc": 0.00012775423718109914,
+      "sd": 4.6629157028155355e-05
+    },
+    {
+      "feature": "url_len",
+      "mean_drop_in_pr_auc": 0.00010155640866793547,
+      "sd": 0.00012882896680125924
+    },
+    {
+      "feature": "n_subdomains",
+      "mean_drop_in_pr_auc": 8.907403770155308e-05,
+      "sd": 8.740580892285689e-05
+    },
+    {
+      "feature": "letter_ratio",
+      "mean_drop_in_pr_auc": 8.842175888117421e-05,
+      "sd": 8.884010779831868e-05
+    },
+    {
+      "feature": "path_len",
+      "mean_drop_in_pr_auc": 5.5641327751265734e-05,
+      "sd": 5.9086976244974464e-05
+    },
+    {
+      "feature": "host_entropy",
+      "mean_drop_in_pr_auc": 3.5749758540903896e-05,
+      "sd": 2.1112047370786385e-05
+    },
+    {
+      "feature": "tld_len",
+      "mean_drop_in_pr_auc": 2.024334983221632e-05,
+      "sd": 1.802440485865057e-05
+    },
+    {
+      "feature": "n_qmark",
+      "mean_drop_in_pr_auc": 9.374118063099069e-06,
+      "sd": 3.2534226742912095e-05
+    },
+    {
+      "feature": "keyword_count",
+      "mean_drop_in_pr_auc": 6.118210830607929e-06,
+      "sd": 5.8049658513881045e-05
+    },
+    {
+      "feature": "n_dots",
+      "mean_drop_in_pr_auc": 4.347152495842721e-06,
+      "sd": 4.306369642417175e-05
+    },
+    {
+      "feature": "n_hyphens",
+      "mean_drop_in_pr_auc": 2.7711379582795457e-06,
+      "sd": 1.4999454596209312e-05
+    },
+    {
+      "feature": "n_equals",
+      "mean_drop_in_pr_auc": 8.631225567823364e-07,
+      "sd": 4.0069214025806225e-06
+    },
+    {
+      "feature": "has_punycode",
+      "mean_drop_in_pr_auc": 7.230281835912677e-07,
+      "sd": 3.620118395410826e-07
+    },
+    {
+      "feature": "has_port",
+      "mean_drop_in_pr_auc": -6.609510714294941e-08,
+      "sd": 9.172923660884552e-08
+    },
+    {
+      "feature": "n_underscores",
+      "mean_drop_in_pr_auc": -1.7488508503582522e-07,
+      "sd": 1.2418428377063049e-07
+    },
+    {
+      "feature": "n_percent",
+      "mean_drop_in_pr_auc": -6.42075033852052e-07,
+      "sd": 8.58100620978736e-08
+    },
+    {
+      "feature": "host_is_ip",
+      "mean_drop_in_pr_auc": -1.08453695695232e-06,
+      "sd": 4.5402711167608497e-07
+    },
+    {
+      "feature": "n_at",
+      "mean_drop_in_pr_auc": -1.5807519493815647e-06,
+      "sd": 4.123817351145997e-07
+    },
+    {
+      "feature": "has_double_slash_in_path",
+      "mean_drop_in_pr_auc": -2.1404155485793552e-06,
+      "sd": 5.236999557714935e-07
+    },
+    {
+      "feature": "n_digits",
+      "mean_drop_in_pr_auc": -2.8199982407883794e-06,
+      "sd": 2.0242438162258074e-05
+    },
+    {
+      "feature": "n_amp",
+      "mean_drop_in_pr_auc": -4.0436123974529895e-06,
+      "sd": 7.887895185354835e-07
+    },
+    {
+      "feature": "query_len",
+      "mean_drop_in_pr_auc": -4.566703220265644e-06,
+      "sd": 7.806530032168504e-07
+    }
+  ],
+  "note": "permutation importance on 8000 random test rows, 5 repeats, metric = PR-AUC drop"
+}

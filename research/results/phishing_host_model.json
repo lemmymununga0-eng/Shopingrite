@@ -1,0 +1,298 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "feature_set": "host",
+  "features": [
+    "host_len",
+    "n_subdomains",
+    "host_is_ip",
+    "has_punycode",
+    "host_digit_ratio",
+    "host_hyphens",
+    "host_entropy",
+    "longest_label",
+    "tld_len",
+    "tld_common"
+  ],
+  "models": {
+    "logistic_regression": {
+      "label": "Logistic regression",
+      "selected": {
+        "name": "logistic_regression {\"C\": 1.0}",
+        "params": {
+          "C": 1.0
+        }
+      },
+      "threshold": 0.8461538461538461,
+      "cv_pr_auc": 0.835542299657587,
+      "test": {
+        "threshold": 0.8461538461538461,
+        "test_rows": 47284,
+        "support_legitimate": 27166,
+        "support_fraud": 20118,
+        "fraud_prevalence": 0.42547161830640384,
+        "accuracy": 0.7541663141866171,
+        "precision": 0.9755879059350504,
+        "recall": 0.4330450342976439,
+        "f1": 0.5998347562654917,
+        "f2": 0.48723742198161113,
+        "confusion_matrix": {
+          "tn": 26948,
+          "fp": 218,
+          "fn": 11406,
+          "tp": 8712
+        },
+        "false_positives": 218,
+        "false_negatives": 11406,
+        "false_positive_rate": 0.008024736803357137,
+        "false_negative_rate": 0.5669549657023562,
+        "flagged_share": 0.18885881059132054,
+        "brier": 0.14404675900505545,
+        "calibration_error_ece": 0.009995476261624135,
+        "pr_auc": 0.8234937186129618,
+        "roc_auc": 0.832546802913828,
+        "specificity": 0.9919752631966429,
+        "mcc": 0.5368882008672995
+      },
+      "invariance_checks": [
+        {
+          "check": "legitimate addresses stay unflagged when we remove the www prefix",
+          "passed": true,
+          "detail": "flagged 0.8% (unchanged addresses: 0.8%); allowed rise 5 points"
+        },
+        {
+          "check": "legitimate addresses stay unflagged when we use http instead of https",
+          "passed": true,
+          "detail": "flagged 0.8% (unchanged addresses: 0.8%); allowed rise 5 points"
+        },
+        {
+          "check": "legitimate addresses stay unflagged when we add a trailing slash",
+          "passed": true,
+          "detail": "flagged 0.8% (unchanged addresses: 0.8%); allowed rise 5 points"
+        },
+        {
+          "check": "legitimate addresses stay unflagged when we add a path",
+          "passed": true,
+          "detail": "flagged 0.8% (unchanged addresses: 0.8%); allowed rise 5 points"
+        },
+        {
+          "check": "phishing addresses are still flagged when rewritten as https://www.<host>",
+          "passed": true,
+          "detail": "flagged 39.3% after rewriting, 39.3% before; must keep 80% of the original rate"
+        }
+      ],
+      "cosmetic_flagged_shares": {
+        "legitimate": {
+          "as released": 0.008024736803357137,
+          "remove the www prefix": 0.008024736803357137,
+          "use http instead of https": 0.008024736803357137,
+          "add a trailing slash": 0.008024736803357137,
+          "add a path": 0.008024736803357137
+        },
+        "phishing": {
+          "as released": 0.4330450342976439,
+          "rewrite as https://www.<host>": 0.4330450342976439
+        }
+      },
+      "validation_passed": true,
+      "failures": [],
+      "calibration": {
+        "method": "isotonic regression fitted on out-of-fold training predictions",
+        "brier_raw": 0.14873084668511685,
+        "ece_raw": 0.05435354567370869,
+        "brier_calibrated": 0.14404675900505545,
+        "ece_calibrated": 0.009995476261624135
+      }
+    },
+    "hist_gradient_boosting": {
+      "label": "Gradient boosting (HistGB)",
+      "selected": {
+        "name": "hist_gradient_boosting {\"learning_rate\": 0.1, \"max_iter\": 200, \"max_leaf_nodes\": 31}",
+        "params": {
+          "max_leaf_nodes": 31,
+          "learning_rate": 0.1,
+          "max_iter": 200
+        }
+      },
+      "threshold": 0.8345588235294118,
+      "cv_pr_auc": 0.8761442983093883,
+      "test": {
+        "threshold": 0.8345588235294118,
+        "test_rows": 47284,
+        "support_legitimate": 27166,
+        "support_fraud": 20118,
+        "fraud_prevalence": 0.42547161830640384,
+        "accuracy": 0.7923187547584807,
+        "precision": 0.9791550344314164,
+        "recall": 0.5230142161248633,
+        "f1": 0.6818299637117677,
+        "f2": 0.5767502028108488,
+        "confusion_matrix": {
+          "tn": 26942,
+          "fp": 224,
+          "fn": 9596,
+          "tp": 10522
+        },
+        "false_positives": 224,
+        "false_negatives": 9596,
+        "false_positive_rate": 0.008245601119045867,
+        "false_negative_rate": 0.4769857838751367,
+        "flagged_share": 0.22726503679891719,
+        "brier": 0.1339089354041866,
+        "calibration_error_ece": 0.013509318379500123,
+        "pr_auc": 0.8627444198598546,
+        "roc_auc": 0.8557177088659936,
+        "specificity": 0.9917543988809542,
+        "mcc": 0.6073254864826495
+      },
+      "invariance_checks": [
+        {
+          "check": "legitimate addresses stay unflagged when we remove the www prefix",
+          "passed": true,
+          "detail": "flagged 0.9% (unchanged addresses: 0.9%); allowed rise 5 points"
+        },
+        {
+          "check": "legitimate addresses stay unflagged when we use http instead of https",
+          "passed": true,
+          "detail": "flagged 0.9% (unchanged addresses: 0.9%); allowed rise 5 points"
+        },
+        {
+          "check": "legitimate addresses stay unflagged when we add a trailing slash",
+          "passed": true,
+          "detail": "flagged 0.9% (unchanged addresses: 0.9%); allowed rise 5 points"
+        },
+        {
+          "check": "legitimate addresses stay unflagged when we add a path",
+          "passed": true,
+          "detail": "flagged 0.9% (unchanged addresses: 0.9%); allowed rise 5 points"
+        },
+        {
+          "check": "phishing addresses are still flagged when rewritten as https://www.<host>",
+          "passed": true,
+          "detail": "flagged 47.3% after rewriting, 47.3% before; must keep 80% of the original rate"
+        }
+      ],
+      "cosmetic_flagged_shares": {
+        "legitimate": {
+          "as released": 0.008245601119045867,
+          "remove the www prefix": 0.008245601119045867,
+          "use http instead of https": 0.008245601119045867,
+          "add a trailing slash": 0.008245601119045867,
+          "add a path": 0.008245601119045867
+        },
+        "phishing": {
+          "as released": 0.5230142161248633,
+          "rewrite as https://www.<host>": 0.5230142161248633
+        }
+      },
+      "validation_passed": true,
+      "failures": [],
+      "calibration": {
+        "method": "isotonic regression fitted on out-of-fold training predictions",
+        "brier_raw": 0.13474665798945756,
+        "ece_raw": 0.03231054791344295,
+        "brier_calibrated": 0.1339089354041866,
+        "ece_calibrated": 0.013509318379500123
+      }
+    }
+  },
+  "bootstrap": {
+    "B": 1000,
+    "seed": 7,
+    "ci95": {
+      "logistic_regression": {
+        "pr_auc": {
+          "lo": 0.8195552340961411,
+          "hi": 0.8270551484978396,
+          "sd": 0.0018571481051278583
+        },
+        "roc_auc": {
+          "lo": 0.8287307577307799,
+          "hi": 0.8360442962461988,
+          "sd": 0.0018427418610645289
+        },
+        "precision": {
+          "lo": 0.9723343515037595,
+          "hi": 0.9786631705469054,
+          "sd": 0.0016300526087853554
+        },
+        "recall": {
+          "lo": 0.42593697186599067,
+          "hi": 0.4399070484143553,
+          "sd": 0.0035292299622021973
+        },
+        "f1": {
+          "lo": 0.5928380291668262,
+          "hi": 0.606504576797638,
+          "sd": 0.0034459895799477938
+        },
+        "mcc": {
+          "lo": 0.5309153020526132,
+          "hi": 0.5430166504780933,
+          "sd": 0.0030310014707924013
+        }
+      },
+      "hist_gradient_boosting": {
+        "pr_auc": {
+          "lo": 0.859431758278069,
+          "hi": 0.8657833687378959,
+          "sd": 0.0016313817369527606
+        },
+        "roc_auc": {
+          "lo": 0.8519477134252679,
+          "hi": 0.859326658644938,
+          "sd": 0.001824880786058577
+        },
+        "precision": {
+          "lo": 0.9763081348074127,
+          "hi": 0.9819697779758432,
+          "sd": 0.0013902284621882938
+        },
+        "recall": {
+          "lo": 0.5160043244855353,
+          "hi": 0.5300738144944825,
+          "sd": 0.0036276426735597253
+        },
+        "f1": {
+          "lo": 0.6756565497151585,
+          "hi": 0.6878666582894882,
+          "sd": 0.0031423197903018285
+        },
+        "mcc": {
+          "lo": 0.6014821378816443,
+          "hi": 0.6128852670839346,
+          "sd": 0.0030023264479759385
+        }
+      }
+    },
+    "paired_differences": {
+      "logistic_regression - hist_gradient_boosting [pr_auc]": {
+        "mean": -0.03928835641632101,
+        "lo": -0.04103049379575545,
+        "hi": -0.03755463419201389,
+        "p_two_sided": 0.0
+      },
+      "logistic_regression - hist_gradient_boosting [roc_auc]": {
+        "mean": -0.023204888379352525,
+        "lo": -0.025413616910101463,
+        "hi": -0.021020660358358152,
+        "p_two_sided": 0.0
+      },
+      "logistic_regression - hist_gradient_boosting [f1]": {
+        "mean": -0.08202160492158585,
+        "lo": -0.08633247538908535,
+        "hi": -0.07793458977434414,
+        "p_two_sided": 0.0
+      }
+    }
+  }
+}

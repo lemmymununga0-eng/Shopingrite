@@ -1,0 +1,496 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "settings": {
+    "order_high_value_cents": 30000,
+    "order_bulk_quantity": 15,
+    "order_velocity_per_hour": 4,
+    "order_rejection_burst": 5,
+    "bands": {
+      "high_at": 60,
+      "review_at": 30
+    }
+  },
+  "scenarios": [
+    {
+      "name": "1 Routine repeat basket",
+      "description": "Returning customer, 3 earlier paid orders (3 days ago), 2 kg for collection",
+      "order_total_cents": 4998,
+      "score": 0,
+      "decision": "allow",
+      "rules": [],
+      "case_opened": false,
+      "features": {
+        "total_cents": 4998,
+        "currency": "ZMW",
+        "max_line_quantity": 2,
+        "orders_last_hour": 1,
+        "prior_orders": 3,
+        "prior_paid_orders": 3,
+        "average_paid_total_cents": 2499,
+        "failed_payments_24h": 0,
+        "rejected_checkouts_10m": 0,
+        "delivery_address_seen_before": false,
+        "fulfilment": "collection",
+        "local_hour": 12,
+        "payment_method": "simulated"
+      },
+      "model_records": [
+        {
+          "model": "creditcard_pca",
+          "status": "model_unavailable"
+        },
+        {
+          "model": "store_grocery",
+          "status": "model_unavailable"
+        }
+      ]
+    },
+    {
+      "name": "2 First-time medium basket",
+      "description": "New customer, 8 kg, collection",
+      "order_total_cents": 19992,
+      "score": 15,
+      "decision": "allow",
+      "rules": [
+        {
+          "rule": "first_order_large",
+          "points": 15,
+          "text": "This is the customer's first paid order and it is large."
+        }
+      ],
+      "case_opened": false,
+      "features": {
+        "total_cents": 19992,
+        "currency": "ZMW",
+        "max_line_quantity": 8,
+        "orders_last_hour": 1,
+        "prior_orders": 0,
+        "prior_paid_orders": 0,
+        "average_paid_total_cents": 0,
+        "failed_payments_24h": 0,
+        "rejected_checkouts_10m": 0,
+        "delivery_address_seen_before": false,
+        "fulfilment": "collection",
+        "local_hour": 12,
+        "payment_method": "simulated"
+      },
+      "model_records": [
+        {
+          "model": "creditcard_pca",
+          "status": "model_unavailable"
+        },
+        {
+          "model": "store_grocery",
+          "status": "model_unavailable"
+        }
+      ]
+    },
+    {
+      "name": "3 First-time bulk basket",
+      "description": "New customer, 20 kg, home delivery",
+      "order_total_cents": 53480,
+      "score": 60,
+      "decision": "high",
+      "rules": [
+        {
+          "rule": "high_value",
+          "points": 30,
+          "text": "Order total is at or above the high-value limit."
+        },
+        {
+          "rule": "bulk_quantity",
+          "points": 15,
+          "text": "A line quantity is at or above the bulk-quantity limit."
+        },
+        {
+          "rule": "first_order_large",
+          "points": 15,
+          "text": "This is the customer's first paid order and it is large."
+        }
+      ],
+      "case_opened": true,
+      "features": {
+        "total_cents": 53480,
+        "currency": "ZMW",
+        "max_line_quantity": 20,
+        "orders_last_hour": 1,
+        "prior_orders": 0,
+        "prior_paid_orders": 0,
+        "average_paid_total_cents": 0,
+        "failed_payments_24h": 0,
+        "rejected_checkouts_10m": 0,
+        "delivery_address_seen_before": false,
+        "fulfilment": "delivery",
+        "local_hour": 12,
+        "payment_method": "simulated"
+      },
+      "model_records": [
+        {
+          "model": "creditcard_pca",
+          "status": "model_unavailable"
+        },
+        {
+          "model": "store_grocery",
+          "status": "model_unavailable"
+        }
+      ]
+    },
+    {
+      "name": "4 Spend spike",
+      "description": "Two earlier 1 kg orders, then 12 kg (about 12 times the usual total)",
+      "order_total_cents": 29988,
+      "score": 20,
+      "decision": "allow",
+      "rules": [
+        {
+          "rule": "spend_spike",
+          "points": 20,
+          "text": "The total is at least four times this customer's usual paid order."
+        }
+      ],
+      "case_opened": false,
+      "features": {
+        "total_cents": 29988,
+        "currency": "ZMW",
+        "max_line_quantity": 12,
+        "orders_last_hour": 1,
+        "prior_orders": 2,
+        "prior_paid_orders": 2,
+        "average_paid_total_cents": 2499,
+        "failed_payments_24h": 0,
+        "rejected_checkouts_10m": 0,
+        "delivery_address_seen_before": false,
+        "fulfilment": "collection",
+        "local_hour": 12,
+        "payment_method": "simulated"
+      },
+      "model_records": [
+        {
+          "model": "creditcard_pca",
+          "status": "model_unavailable"
+        },
+        {
+          "model": "store_grocery",
+          "status": "model_unavailable"
+        }
+      ]
+    },
+    {
+      "name": "5 Order burst",
+      "description": "Three earlier orders within the last hour, then a fourth (limit 4 per hour)",
+      "order_total_cents": 2499,
+      "score": 20,
+      "decision": "allow",
+      "rules": [
+        {
+          "rule": "order_velocity",
+          "points": 20,
+          "text": "The customer placed many orders within one hour."
+        }
+      ],
+      "case_opened": true,
+      "features": {
+        "total_cents": 2499,
+        "currency": "ZMW",
+        "max_line_quantity": 1,
+        "orders_last_hour": 4,
+        "prior_orders": 3,
+        "prior_paid_orders": 3,
+        "average_paid_total_cents": 2499,
+        "failed_payments_24h": 0,
+        "rejected_checkouts_10m": 0,
+        "delivery_address_seen_before": false,
+        "fulfilment": "collection",
+        "local_hour": 12,
+        "payment_method": "simulated"
+      },
+      "model_records": [
+        {
+          "model": "creditcard_pca",
+          "status": "model_unavailable"
+        },
+        {
+          "model": "store_grocery",
+          "status": "model_unavailable"
+        }
+      ]
+    },
+    {
+      "name": "6 Repeated failed payments",
+      "description": "Three failed payments earlier today, then a fourth order",
+      "order_total_cents": 2499,
+      "score": 25,
+      "decision": "allow",
+      "rules": [
+        {
+          "rule": "failed_payments",
+          "points": 25,
+          "text": "Three or more failed payments by this customer in the last 24 hours."
+        }
+      ],
+      "case_opened": false,
+      "features": {
+        "total_cents": 2499,
+        "currency": "ZMW",
+        "max_line_quantity": 1,
+        "orders_last_hour": 1,
+        "prior_orders": 3,
+        "prior_paid_orders": 0,
+        "average_paid_total_cents": 0,
+        "failed_payments_24h": 3,
+        "rejected_checkouts_10m": 0,
+        "delivery_address_seen_before": false,
+        "fulfilment": "collection",
+        "local_hour": 12,
+        "payment_method": "simulated"
+      },
+      "model_records": [
+        {
+          "model": "creditcard_pca",
+          "status": "model_unavailable"
+        },
+        {
+          "model": "store_grocery",
+          "status": "model_unavailable"
+        }
+      ]
+    },
+    {
+      "name": "7 New delivery address",
+      "description": "Two deliveries to one address, then a delivery to another",
+      "order_total_cents": 5999,
+      "score": 10,
+      "decision": "allow",
+      "rules": [
+        {
+          "rule": "new_address",
+          "points": 10,
+          "text": "Delivery to an address this customer has not used before."
+        }
+      ],
+      "case_opened": false,
+      "features": {
+        "total_cents": 5999,
+        "currency": "ZMW",
+        "max_line_quantity": 1,
+        "orders_last_hour": 1,
+        "prior_orders": 2,
+        "prior_paid_orders": 2,
+        "average_paid_total_cents": 5999,
+        "failed_payments_24h": 0,
+        "rejected_checkouts_10m": 0,
+        "delivery_address_seen_before": false,
+        "fulfilment": "delivery",
+        "local_hour": 12,
+        "payment_method": "simulated"
+      },
+      "model_records": [
+        {
+          "model": "creditcard_pca",
+          "status": "model_unavailable"
+        },
+        {
+          "model": "store_grocery",
+          "status": "model_unavailable"
+        }
+      ]
+    },
+    {
+      "name": "8 Night-time order",
+      "description": "Ordinary 1 kg order placed at 02:00 local time",
+      "order_total_cents": 2499,
+      "score": 5,
+      "decision": "allow",
+      "rules": [
+        {
+          "rule": "night_order",
+          "points": 5,
+          "text": "Order placed between midnight and 05:00 local time."
+        }
+      ],
+      "case_opened": false,
+      "features": {
+        "total_cents": 2499,
+        "currency": "ZMW",
+        "max_line_quantity": 1,
+        "orders_last_hour": 1,
+        "prior_orders": 2,
+        "prior_paid_orders": 2,
+        "average_paid_total_cents": 2499,
+        "failed_payments_24h": 0,
+        "rejected_checkouts_10m": 0,
+        "delivery_address_seen_before": false,
+        "fulfilment": "collection",
+        "local_hour": 2,
+        "payment_method": "simulated"
+      },
+      "model_records": [
+        {
+          "model": "creditcard_pca",
+          "status": "model_unavailable"
+        },
+        {
+          "model": "store_grocery",
+          "status": "model_unavailable"
+        }
+      ]
+    },
+    {
+      "name": "9 Repeated rejected checkouts",
+      "description": "Five rejected checkouts in ten minutes, then an ordinary order",
+      "order_total_cents": 2499,
+      "score": 20,
+      "decision": "allow",
+      "rules": [
+        {
+          "rule": "repeated_rejections",
+          "points": 20,
+          "text": "The customer had many rejected checkouts in the last 10 minutes."
+        }
+      ],
+      "case_opened": true,
+      "features": {
+        "total_cents": 2499,
+        "currency": "ZMW",
+        "max_line_quantity": 1,
+        "orders_last_hour": 1,
+        "prior_orders": 0,
+        "prior_paid_orders": 0,
+        "average_paid_total_cents": 0,
+        "failed_payments_24h": 0,
+        "rejected_checkouts_10m": 5,
+        "delivery_address_seen_before": false,
+        "fulfilment": "collection",
+        "local_hour": 12,
+        "payment_method": "simulated"
+      },
+      "model_records": [
+        {
+          "model": "creditcard_pca",
+          "status": "model_unavailable"
+        },
+        {
+          "model": "store_grocery",
+          "status": "model_unavailable"
+        }
+      ]
+    },
+    {
+      "name": "10 Combined warning signs",
+      "description": "Returning customer, 20 kg to a new address at 02:00",
+      "order_total_cents": 53480,
+      "score": 80,
+      "decision": "high",
+      "rules": [
+        {
+          "rule": "high_value",
+          "points": 30,
+          "text": "Order total is at or above the high-value limit."
+        },
+        {
+          "rule": "bulk_quantity",
+          "points": 15,
+          "text": "A line quantity is at or above the bulk-quantity limit."
+        },
+        {
+          "rule": "spend_spike",
+          "points": 20,
+          "text": "The total is at least four times this customer's usual paid order."
+        },
+        {
+          "rule": "new_address",
+          "points": 10,
+          "text": "Delivery to an address this customer has not used before."
+        },
+        {
+          "rule": "night_order",
+          "points": 5,
+          "text": "Order placed between midnight and 05:00 local time."
+        }
+      ],
+      "case_opened": true,
+      "features": {
+        "total_cents": 53480,
+        "currency": "ZMW",
+        "max_line_quantity": 20,
+        "orders_last_hour": 1,
+        "prior_orders": 2,
+        "prior_paid_orders": 2,
+        "average_paid_total_cents": 5999,
+        "failed_payments_24h": 0,
+        "rejected_checkouts_10m": 0,
+        "delivery_address_seen_before": false,
+        "fulfilment": "delivery",
+        "local_hour": 2,
+        "payment_method": "simulated"
+      },
+      "model_records": [
+        {
+          "model": "creditcard_pca",
+          "status": "model_unavailable"
+        },
+        {
+          "model": "store_grocery",
+          "status": "model_unavailable"
+        }
+      ]
+    }
+  ],
+  "rule_table": [
+    {
+      "rule": "high_value",
+      "points": 30,
+      "text": "Order total is at or above the high-value limit."
+    },
+    {
+      "rule": "failed_payments",
+      "points": 25,
+      "text": "Three or more failed payments by this customer in the last 24 hours."
+    },
+    {
+      "rule": "order_velocity",
+      "points": 20,
+      "text": "The customer placed many orders within one hour."
+    },
+    {
+      "rule": "repeated_rejections",
+      "points": 20,
+      "text": "The customer had many rejected checkouts in the last 10 minutes."
+    },
+    {
+      "rule": "spend_spike",
+      "points": 20,
+      "text": "The total is at least four times this customer's usual paid order."
+    },
+    {
+      "rule": "bulk_quantity",
+      "points": 15,
+      "text": "A line quantity is at or above the bulk-quantity limit."
+    },
+    {
+      "rule": "first_order_large",
+      "points": 15,
+      "text": "This is the customer's first paid order and it is large."
+    },
+    {
+      "rule": "new_address",
+      "points": 10,
+      "text": "Delivery to an address this customer has not used before."
+    },
+    {
+      "rule": "night_order",
+      "points": 5,
+      "text": "Order placed between midnight and 05:00 local time."
+    }
+  ]
+}

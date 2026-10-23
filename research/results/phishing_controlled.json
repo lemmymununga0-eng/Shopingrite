@@ -1,0 +1,235 @@
+{
+  "environment": {
+    "python": "3.14.0",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "cpu_count": 12,
+    "numpy": "2.4.4",
+    "pandas": "3.0.3",
+    "scikit-learn": "1.8.0",
+    "scipy": "1.17.1",
+    "git_commit": "7edee261858a73cb6da95a1e47a42577c68b177a",
+    "seed": 42
+  },
+  "counts": {
+    "all rows": {
+      "legitimate": 134850,
+      "phishing": 100520
+    },
+    "bare site root (no path or query)": {
+      "legitimate": 134850,
+      "phishing": 72024
+    },
+    "HTTPS": {
+      "legitimate": 134850,
+      "phishing": 48885
+    },
+    "www prefix": {
+      "legitimate": 134850,
+      "phishing": 41718
+    },
+    "no trailing slash or path": {
+      "legitimate": 134850,
+      "phishing": 40507
+    },
+    "bare HTTPS site root": {
+      "legitimate": 134850,
+      "phishing": 28318
+    },
+    "exact legitimate template (https, www, no path)": {
+      "legitimate": 134850,
+      "phishing": 627
+    }
+  },
+  "share_of_class": {
+    "all rows": {
+      "legitimate": 1.0,
+      "phishing": 1.0
+    },
+    "bare site root (no path or query)": {
+      "legitimate": 1.0,
+      "phishing": 0.7165141265419817
+    },
+    "HTTPS": {
+      "legitimate": 1.0,
+      "phishing": 0.48632113012335854
+    },
+    "www prefix": {
+      "legitimate": 1.0,
+      "phishing": 0.41502188619180264
+    },
+    "no trailing slash or path": {
+      "legitimate": 1.0,
+      "phishing": 0.40297453243135695
+    },
+    "bare HTTPS site root": {
+      "legitimate": 1.0,
+      "phishing": 0.2817150815758058
+    },
+    "exact legitimate template (https, www, no path)": {
+      "legitimate": 1.0,
+      "phishing": 0.006237564663748508
+    }
+  },
+  "mean_url_length": {
+    "legitimate": 27.228609566184648,
+    "phishing": 46.22143851969757
+  },
+  "subsets": {
+    "bare HTTPS site root": {
+      "test_rows": 32757,
+      "test_phishing": 5591,
+      "train_rows": 130411,
+      "train_phishing": 22727,
+      "production_model": {
+        "threshold": 0.26666666666666666,
+        "precision": 0.9956442831215971,
+        "recall": 0.981219817563942,
+        "f1": 0.9883794252770021,
+        "accuracy": 0.9960619104313582,
+        "confusion_matrix": {
+          "tn": 27142,
+          "fp": 24,
+          "fn": 105,
+          "tp": 5486
+        },
+        "fpr": 0.0008834572627549142,
+        "pr_auc": 0.9909076095475529,
+        "roc_auc": 0.9945423384699746,
+        "specificity": 0.999116542737245,
+        "mcc": 0.9860468720617939
+      },
+      "retrained_logistic_regression": {
+        "threshold": 0.5,
+        "precision": 0.9942007973903588,
+        "recall": 0.981219817563942,
+        "f1": 0.9876676568548024,
+        "accuracy": 0.9958176878224502,
+        "confusion_matrix": {
+          "tn": 27134,
+          "fp": 32,
+          "fn": 105,
+          "tp": 5486
+        },
+        "fpr": 0.0011779430170065523,
+        "pr_auc": 0.9916586730167597,
+        "roc_auc": 0.9945666331496652,
+        "specificity": 0.9988220569829934,
+        "mcc": 0.9851804809339183
+      },
+      "retrained_without_www_feature": {
+        "threshold": 0.5,
+        "precision": 0.9807517704739422,
+        "recall": 0.9660168127347523,
+        "f1": 0.9733285276626419,
+        "accuracy": 0.9909637634704033,
+        "confusion_matrix": {
+          "tn": 27060,
+          "fp": 106,
+          "fn": 190,
+          "tp": 5401
+        },
+        "fpr": 0.0039019362438342045,
+        "pr_auc": 0.9877049288245289,
+        "roc_auc": 0.9910829242203643,
+        "specificity": 0.9960980637561658,
+        "mcc": 0.9679295142768962
+      },
+      "host_features_only": {
+        "threshold": 0.5,
+        "precision": 0.8632507070370986,
+        "recall": 0.9280987301019495,
+        "f1": 0.8945009481123943,
+        "accuracy": 0.962633940837073,
+        "confusion_matrix": {
+          "tn": 26344,
+          "fp": 822,
+          "fn": 402,
+          "tp": 5189
+        },
+        "fpr": 0.030258411249355813,
+        "pr_auc": 0.9569747874252076,
+        "roc_auc": 0.9794481560292028,
+        "specificity": 0.9697415887506442,
+        "mcc": 0.8726777723001118
+      }
+    },
+    "exact legitimate template (https, www, no path)": {
+      "test_rows": 27310,
+      "test_phishing": 144,
+      "train_rows": 108167,
+      "train_phishing": 483,
+      "production_model": {
+        "threshold": 0.26666666666666666,
+        "precision": 0.6190476190476191,
+        "recall": 0.2708333333333333,
+        "f1": 0.37681159420289856,
+        "accuracy": 0.9952764555108019,
+        "confusion_matrix": {
+          "tn": 27142,
+          "fp": 24,
+          "fn": 105,
+          "tp": 39
+        },
+        "fpr": 0.0008834572627549142,
+        "pr_auc": 0.27808011114388304,
+        "roc_auc": 0.7887963252676958,
+        "specificity": 0.999116542737245,
+        "mcc": 0.4075187599143528
+      },
+      "retrained_logistic_regression": {
+        "threshold": 0.5,
+        "precision": 0.028421839940164548,
+        "recall": 0.5277777777777778,
+        "f1": 0.05393896380411639,
+        "accuracy": 0.9023800805565727,
+        "confusion_matrix": {
+          "tn": 24568,
+          "fp": 2598,
+          "fn": 68,
+          "tp": 76
+        },
+        "fpr": 0.09563424869321946,
+        "pr_auc": 0.2331851788076008,
+        "roc_auc": 0.7900896852274493,
+        "specificity": 0.9043657513067805,
+        "mcc": 0.10530677415843398
+      },
+      "retrained_without_www_feature": {
+        "threshold": 0.5,
+        "precision": 0.028421839940164548,
+        "recall": 0.5277777777777778,
+        "f1": 0.05393896380411639,
+        "accuracy": 0.9023800805565727,
+        "confusion_matrix": {
+          "tn": 24568,
+          "fp": 2598,
+          "fn": 68,
+          "tp": 76
+        },
+        "fpr": 0.09563424869321946,
+        "pr_auc": 0.2331852106786125,
+        "roc_auc": 0.7900904521174344,
+        "specificity": 0.9043657513067805,
+        "mcc": 0.10530677415843398
+      },
+      "host_features_only": {
+        "threshold": 0.5,
+        "precision": 0.028228652081863093,
+        "recall": 0.5555555555555556,
+        "f1": 0.05372733378106112,
+        "accuracy": 0.8968143537165874,
+        "confusion_matrix": {
+          "tn": 24412,
+          "fp": 2754,
+          "fn": 64,
+          "tp": 80
+        },
+        "fpr": 0.10137672090112641,
+        "pr_auc": 0.23589618269971652,
+        "roc_auc": 0.7928276102890051,
+        "specificity": 0.8986232790988736,
+        "mcc": 0.10785762193580242
+      }
+    }
+  }
+}
