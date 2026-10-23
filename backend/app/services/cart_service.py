@@ -11,6 +11,8 @@ from .inventory_service import product_out
 
 
 def money(cents: int, currency: str) -> str:
+    if currency == "ZMW":
+        return f"K{cents / 100:,.2f}"          # Zambian kwacha is written K1,234.50
     return f"{currency} {cents / 100:,.2f}"
 
 

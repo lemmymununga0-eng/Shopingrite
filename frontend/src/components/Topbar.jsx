@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Bell, ChevronDown, LogOut, Menu, Search, ShieldCheck } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu, Search, ShieldCheck, Store } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import { money } from "../services/format";
@@ -10,7 +10,7 @@ import { BRAND } from "../services/format";
 export const PAGE_TITLES = {
   "/dashboard": "Dashboard", "/payment-card": "Payment Card", "/payment": "New Payment", "/model-demo": "PCA Model Demo",
   "/alerts": "Fraud Alerts", "/history": "Transaction History", "/profile": "Profile", "/settings": "Settings", "/about": "About",
-  "/investigations": "Investigation Centre", "/scamwatch": "ScamWatch", "/security": "Security Monitor", "/inventory": "Inventory & Orders",
+  "/investigations": "Investigation Centre", "/scamwatch": "ScamWatch", "/security": "Security Monitor", "/inventory": "Inventory", "/orders": "Orders & Risk", "/products": "Products",
   "/reports": "Reports & Business Impact", "/users": "Users & Roles", "/audit": "Audit Trail", "/integrations": "Model & Integrations",
 };
 export const titleFor = path => PAGE_TITLES[path] || (path.startsWith("/transactions/") ? "Transaction Details" : BRAND);
@@ -90,6 +90,7 @@ export default function Topbar({ onMenuClick }) {
     <form className="topbar-search" role="search" onSubmit={search}>
       <Search size={15} aria-hidden="true"/><input aria-label="Search transactions by reference" placeholder="Search reference…" maxLength={40}
         value={q} onChange={e => setQ(e.target.value)}/></form>
+    <Link className="topbar-store" to="/shop"><Store size={16} aria-hidden="true"/> <span>Customer store</span></Link>
     <NotificationMenu/><UserMenu/>
   </header>;
 }

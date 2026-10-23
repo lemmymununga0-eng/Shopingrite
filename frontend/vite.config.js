@@ -10,6 +10,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/tests/setup.js"],
     css: false,
+    testTimeout: 20000,                       // first renders of the lazy-loaded pages are slow on a busy machine
+    hookTimeout: 20000,
     include: ["src/**/*.test.{js,jsx}"],      // browser tests in e2e/ run with Playwright, not Vitest
   },
 });

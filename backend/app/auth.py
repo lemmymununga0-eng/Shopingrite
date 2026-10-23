@@ -95,6 +95,8 @@ def current_user(request: Request, creds: HTTPAuthorizationCredentials | None = 
         _note_failure(request, "auth.invalid_token", "Unreadable access token presented")
         raise _unauthorized()
     role = perm.normalize_role((claims.get("app_metadata") or {}).get("role", perm.CUSTOMER))   # app_metadata is not user-editable
+    if s.console_admin_only and role in (perm.FRAUD_ANALYST, perm.SECURITY_ANALYST):
+        role = perm.CUSTOMER        # CONSOLE_ADMIN_ONLY: analysts get no staff access at all (decided on the server)
     user = User(id=str(claims["sub"]), email=claims.get("email"), role=role, token=creds.credentials)
     request.state.user_id, request.state.user_role = user.id, user.role
     return user

@@ -14,7 +14,7 @@ const TX_REF = `E2E-${Date.now().toString().slice(-8)}`;
 test("1-2. the store loads, is labelled as a demonstration, and products can be found by search", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/shop$/);
-  await expect(page.getByRole("heading", { name: /fresh groceries/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /everyday groceries/i })).toBeVisible();
   await expect(page.getByText(/independent demonstration store/i).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Shop by category" })).toBeVisible();
   await page.getByRole("searchbox", { name: "Search products" }).fill("milk");
@@ -41,7 +41,7 @@ test("3. product page shows database stock; an out-of-stock product cannot be ad
   await expect(page.getByRole("button", { name: /unavailable: baby spinach is out of stock/i })).toBeDisabled();
   await spinach.getByRole("link", { name: "Baby Spinach", exact: true }).click();
   await expect(page.getByText(/out of stock right now/i)).toBeVisible();
-  await expect(page.getByRole("button", { name: /add to cart/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add to cart", exact: true })).toHaveCount(0);   // (related products have their own buttons)
 });
 
 test("4. a shopper signs in (local demo), adds milk to the cart, and the server rejects an unavailable item", async ({ page }) => {
@@ -55,7 +55,7 @@ test("4. a shopper signs in (local demo), adds milk to the cart, and the server 
 
   await page.goto(`/shop/products/${milkId}`);
   await page.getByLabel("Quantity", { exact: true }).fill("2");
-  await page.getByRole("button", { name: /add to cart/i }).click();
+  await page.getByRole("button", { name: "Add to cart", exact: true }).click();
   await expect(page.getByText(/added 2 × full cream milk/i)).toBeVisible();
   await expect(page.getByTestId("cart-count")).toHaveText("2");
 
@@ -77,16 +77,20 @@ test("5-6. checkout is clearly simulated, creates an order, persists it and redu
   await expect(page.getByText(/no card details are collected/i)).toBeVisible();
   await expect(page.getByLabel(/card number/i)).toHaveCount(0);
 
-  await page.getByLabel("Phone number").fill("0821234567");
+  // four steps: details, delivery, review, payment
+  await page.getByLabel("Phone number").fill("0971234567");
+  await page.getByRole("button", { name: "Continue" }).click();
   await page.getByLabel("Street address").fill("12 Test Street");
-  await page.getByLabel("City").fill("Johannesburg");
-  await page.getByLabel("Postal code").fill("2000");
+  await page.getByLabel("City").fill("Lusaka");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("radio", { name: /simulated payment/i }).check();        // real card is the default when configured
   await page.getByRole("button", { name: /place demonstration order/i }).click();
 
   await expect(page.getByText(/your demonstration order was placed/i)).toBeVisible();
   orderRef = (await page.getByTestId("order-ref").textContent()).trim();
   expect(orderRef).toMatch(/^ORD-[0-9A-F]{8}$/);
-  await expect(page.getByText(/no card was used and no money was taken/i)).toBeVisible();
+  await expect(page.getByText(/no money was taken/i)).toBeVisible();
   orderId = page.url().split("/").pop();
 
   const o = await api(page, "GET", `/orders/${orderId}`);
@@ -122,10 +126,10 @@ test("8-9. a fraud analyst submits compatible model inputs and gets a real model
   await page.getByRole("link", { name: "New Payment" }).click();
   await expect(page.getByText(/real model loaded/i)).toBeVisible();
   await page.getByLabel("Transaction Reference").fill(TX_REF);
-  await page.getByLabel("Amount (ZAR)").fill("9000");
+  await page.getByLabel("Amount (ZMW)").fill("9000");
   await page.getByLabel("Transaction Hour (0–23)").fill("2");
   await page.getByLabel("Failed Attempts").fill("5");
-  await page.getByLabel("Customer Average Spend (ZAR)").fill("100");
+  await page.getByLabel("Customer Average Spend (ZMW)").fill("100");
   await page.getByLabel("New Device?").selectOption("yes");
   await page.getByLabel("International Transaction?").selectOption("yes");
   await page.getByRole("button", { name: "Submit for Analysis" }).click();
@@ -227,7 +231,7 @@ test("13-14. security events are recorded and shown to the right role; other rol
 
 test("administrator adjusts stock with an audited reason", async ({ page }) => {
   await signInAs(page, "Administrator");
-  await page.getByRole("link", { name: "Inventory & Orders" }).click();
+  await page.getByRole("link", { name: "Inventory", exact: true }).click();
   await page.getByLabel("Search product or SKU").fill("DEMO-BK-001");
   await page.getByRole("button", { name: "Adjust Brown Bread" }).click();
   const dlg = page.getByRole("dialog");

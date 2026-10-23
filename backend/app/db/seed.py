@@ -8,7 +8,8 @@ from sqlalchemy import select
 
 from ..core import permissions as perm
 from ..core.security import hash_password
-from .models import AppUser, Category, Inventory, Product
+from . import catalogue_zm as zm
+from .models import AppUser, Category, Inventory, PriceHistory, Product, StockMovement
 
 DEMO_PASSWORD = "DemoPass!2026"
 DEMO_USERS = [
@@ -89,12 +90,30 @@ def seed_catalogue(session, currency: str) -> dict:
             continue
         p = Product(sku=sku, name=name, description=desc + " (Demonstration product)", category_id=cats[cat].id,
                     price_cents=cents(price), offer_price_cents=cents(offer) if offer else None, currency=currency,
-                    unit=unit, image_ref=f"/products/{cat}.svg", is_featured=featured, is_demo=True)
+                    unit=unit, image_ref=f"/products/{sku}.jpg", is_featured=featured, is_demo=True)
         session.add(p)
         session.flush()
         session.add(Inventory(product_id=p.id, available_quantity=stock, reserved_quantity=0, reorder_threshold=reorder))
+        session.add(StockMovement(product_id=p.id, delta_available=stock, delta_reserved=0, reason="initial_stock",
+                                  note="seeded demonstration stock"))
         added["products"] += 1
     return added
+
+
+def convert_demo_currency(session, currency: str) -> int:
+    """Switch the sample (is_demo) products to the store currency. Prices are sample figures, so only the currency
+    label changes. Orders already placed keep the currency they were placed in."""
+    from sqlalchemy import update
+    return session.execute(update(Product).where(Product.is_demo.is_(True), Product.currency != currency)
+                           .values(currency=currency)).rowcount
+
+
+def convert_demo_images(session) -> int:
+    """Point sample products that still use the old category illustration at their own photo (/products/<SKU>.jpg).
+    Products whose image was changed by the owner are left alone."""
+    from sqlalchemy import update
+    return session.execute(update(Product).where(Product.is_demo.is_(True), Product.image_ref.like("/products/%.svg"))
+                           .values(image_ref="/products/" + Product.sku + ".jpg")).rowcount
 
 
 def seed_demo_users(session) -> int:
@@ -105,3 +124,51 @@ def seed_demo_users(session) -> int:
             session.add(AppUser(email=email, full_name=name, role=role, password_hash=hash_password(DEMO_PASSWORD)))
             added += 1
     return added
+
+
+def seed_zambian_catalogue(session, currency: str) -> dict:
+    """Insert any missing products from db/catalogue_zm.py with their price provenance. Existing rows (including
+    administrator edits) are never touched. Prices are in kwacha, so nothing is seeded for another store currency."""
+    added = {"zm_categories": 0, "zm_products": 0}
+    if currency != "ZMW":
+        return added
+    cats = {c.slug: c for c in session.scalars(select(Category))}
+    for order, (slug, name) in enumerate(zm.CATEGORIES):
+        if slug not in cats:
+            cats[slug] = Category(slug=slug, name=name, sort_order=order)
+            session.add(cats[slug])
+            added["zm_categories"] += 1
+    session.flush()
+    have = set(session.scalars(select(Product.sku)))
+    for (sku, name, brand, pack, unit, cat, price, status, src, stock, reorder, featured, img, desc) in zm.P:
+        if sku in have:
+            continue
+        offer = zm.DEMO_OFFERS.get(sku)
+        observed = status == "observed"
+        p = Product(sku=sku, name=name, brand=brand, pack_size=pack, description=desc, category_id=cats[cat].id,
+                    price_cents=cents(price), offer_price_cents=cents(offer[0]) if offer else None,
+                    offer_ends_on=offer[1] if offer else None, currency=currency, unit=unit,
+                    image_ref=f"/products/{cat}.svg", image_alt=name, image_status="placeholder",
+                    price_status=status, is_featured=featured, is_demo=True,
+                    price_source_name=zm.LD if observed else "Demonstration estimate",
+                    price_source_url=zm.LD_BASE + src if observed else "",
+                    price_source_type="retailer website" if observed else "estimate",
+                    price_checked_on=zm.CHECKED if observed else None)
+        for k, v in zm.image_fields(img).items():
+            setattr(p, k, v)
+        session.add(p)
+        session.flush()
+        session.add(Inventory(product_id=p.id, available_quantity=stock, reserved_quantity=0, reorder_threshold=reorder))
+        session.add(StockMovement(product_id=p.id, delta_available=stock, delta_reserved=0, reason="initial_stock",
+                                  note="seeded demonstration stock"))
+        session.add(PriceHistory(product_id=p.id, price_cents=p.price_cents, offer_price_cents=p.offer_price_cents,
+                                 currency=currency, price_status=status, source_url=p.price_source_url, recorded_by="seed"))
+        added["zm_products"] += 1
+    return added
+
+
+def retire_legacy_demo(session) -> int:
+    """Hide the original generic DEMO-* products (wrong/generic photos, invented names). Rows stay for order history."""
+    from sqlalchemy import update
+    return session.execute(update(Product).where(Product.sku.like("DEMO-%"), Product.is_active.is_(True))
+                           .values(is_active=False, is_featured=False)).rowcount

@@ -5,7 +5,7 @@ import { BarChart3 } from "lucide-react";
 
 // Risk colours match the badges (always paired with text labels/legends, never colour alone).
 export const RISK_COLORS = { Low: "#16A34A", Medium: "#D97706", High: "#DC2626" };
-const GREEN = "#198754", RED = "#DC2626";
+const GREEN = "#4338ca", RED = "#DC2626";
 
 /** The chart is described by the text label on its wrapper; the drawing itself is hidden from assistive tech and
  *  nothing inside it may take keyboard focus (hidden but focusable content is an accessibility error). */
@@ -33,7 +33,7 @@ export function ActivityChart({ daily }) {
         <XAxis dataKey="date" tickFormatter={shortDate} tick={{ fontSize: 11 }} minTickGap={18}/>
         <YAxis allowDecimals={false} tick={{ fontSize: 11 }}/>
         <Tooltip labelFormatter={l => `Date: ${l}`}/><Legend/>
-        <Area isAnimationActive={false} type="monotone" dataKey="total" name="All transactions" stroke={GREEN} fill="#198754" fillOpacity={0.15}/>
+        <Area isAnimationActive={false} type="monotone" dataKey="total" name="All transactions" stroke={GREEN} fill="#4338ca" fillOpacity={0.15}/>
         <Area isAnimationActive={false} type="monotone" dataKey="flagged" name="Flagged" stroke={RED} fill="#DC2626" fillOpacity={0.15}/>
       </AreaChart>
     </ResponsiveContainer></Decorative></div>;

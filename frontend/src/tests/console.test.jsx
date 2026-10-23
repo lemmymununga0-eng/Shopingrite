@@ -262,7 +262,7 @@ describe("inventory, reports, admin pages", () => {
   });
   it("integrations page is honest: no retailer connection, unverified providers, synthetic model", async () => {
     api.integrations.mockResolvedValue({ retailer_connection: { connected: false, note: "No real retailer system is connected. All store and event data is demonstration data." },
-      store: { name: "FreshCart Demo Store", currency: "ZAR", is_demo: true, payment: "SIMULATED: no real payment provider is connected" },
+      store: { name: "FreshCart Demo Store", currency: "ZMW", is_demo: true, payment: "SIMULATED: no real payment provider is connected" },
       database: { application_db: "connected", application_db_engine: "sqlite", prediction_store: "sqlite" },
       authentication: { supabase_configured: false, supabase_live_tested: false, local_demo_auth_enabled: true, warning: "Local demonstration sign-in is ON." },
       payment_model: { available: true, version: "rf-1", threshold: 0.3, is_synthetic: true }, pca_model: { available: false, message: "PCA demo model not trained." },

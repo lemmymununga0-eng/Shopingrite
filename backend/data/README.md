@@ -8,3 +8,7 @@ Put datasets here. **CSV files and databases in this folder are git-ignored** (l
 - `fraudguard.db` — local SQLite database created by the API (do not edit by hand).
 
 Then run `python inspect_dataset.py` from the backend folder.
+
+## Public datasets
+Use `python scripts/fetch_datasets.py list` (from `backend/`). Downloads land in `data/external/` (git-ignored) with a manifest and
+attribution file. See `docs/DATASETS.md` for what each dataset is good for and its licence status.

@@ -1,4 +1,5 @@
 """Test fixtures. Tokens are signed with a TEST secret; nothing here talks to a real Supabase project."""
+import os
 import time
 
 import jwt
@@ -39,11 +40,26 @@ def model_path(tmp_path_factory):
 LOCAL_SECRET = "local-demo-secret-local-demo-secret-0123456789"
 
 
+def _fresh_postgres(url: str) -> str:
+    """TEST_DATABASE_URL runs the store tests against real PostgreSQL (CI does this). Every test starts from an empty
+    schema, so tests cannot see each other's rows. Returns the URL SQLAlchemy needs."""
+    from sqlalchemy import create_engine, text
+    normalized = Settings(database_url=url, _env_file=None).app_database_url
+    engine = create_engine(normalized)
+    with engine.begin() as conn:
+        conn.execute(text("DROP SCHEMA public CASCADE"))
+        conn.execute(text("CREATE SCHEMA public"))
+    engine.dispose()
+    return normalized
+
+
 @pytest.fixture()
 def settings(tmp_path, model_path):
+    pg = os.environ.get("TEST_DATABASE_URL")
+    app_db = _fresh_postgres(pg) if pg else f"sqlite:///{(tmp_path / 'app.db').as_posix()}"
     return Settings(db_backend="sqlite", sqlite_path=tmp_path / "t.db", supabase_jwt_secret=SECRET,
-                    model_path=model_path, predict_rate_limit_per_min=1000,
-                    database_url=f"sqlite:///{(tmp_path / 'app.db').as_posix()}", seed_demo_data=True,
+                    model_path=model_path, ml_artifact_dir=tmp_path / "ml_artifacts", predict_rate_limit_per_min=1000,
+                    database_url=app_db, seed_demo_data=True, seed_legacy_demo=True, seed_zm_catalogue=False,
                     checkout_rate_limit_per_min=1000, cart_rate_limit_per_min=1000, scamwatch_rate_limit_per_min=1000,
                     scamwatch_providers="heuristic", _env_file=None)
 
@@ -110,8 +126,8 @@ def put_in_cart(client, headers, sku, qty=1):
 
 
 ORDER_BODY = {"fulfilment": "delivery",
-              "contact": {"name": "Test Shopper", "email": "shopper@example.com", "phone": "0821234567"},
-              "address": {"line": "12 Test Street", "city": "Johannesburg", "postal_code": "2000"}}
+              "contact": {"name": "Test Shopper", "email": "shopper@example.com", "phone": "0971234567"},
+              "address": {"line": "12 Test Street", "city": "Lusaka", "postal_code": "2000"}}
 
 
 def order_body(**over):

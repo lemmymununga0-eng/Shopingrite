@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Trash2 } from "lucide-react";
+import { ShieldCheck, Trash2 } from "lucide-react";
 import { EmptyState, ErrorState, Loading } from "../components/ui";
 import { useStore } from "../context/StoreContext";
 import { api } from "../services/api";
 import { moneyC } from "../services/format";
-import { QuantityInput } from "./components";
+import { FreeDelivery } from "./FreeDelivery";
+import { ProductImage, QuantityInput } from "./components";
 
 export default function Cart() {
   const { store, setCart, refreshCart } = useStore();
@@ -29,38 +30,43 @@ export default function Cart() {
 
   if (error) return <ErrorState error={error} onRetry={load}/>;
   if (!cart) return <Loading text="Loading your cart…"/>;
-  if (cart.items.length === 0) return <EmptyState><h1>Your cart is empty</h1><p>Add something fresh to get started.</p>
-    <Link className="shop-btn" to="/shop/products">Continue shopping</Link></EmptyState>;
+  if (cart.items.length === 0) return <EmptyState><div className="empty-cta"><h1>Your cart is empty</h1><p>Add something fresh to get started.</p>
+    <Link className="shop-btn" to="/shop/products">Continue shopping</Link></div></EmptyState>;
 
-  const free = store.free_delivery_over_cents;
   return <div>
     <h1>Your cart</h1>
+    <p className="muted-text" style={{ marginTop: -8 }}>{cart.item_count} item{cart.item_count === 1 ? "" : "s"}</p>
     {actionError && <div className="notice error" role="alert">{actionError}</div>}
     {cart.has_issues && <div className="notice error" role="alert">Some items need attention before you can check out.</div>}
-    <ul className="cart-lines">{cart.items.map(l => <li key={l.item_id} className={`cart-line${l.issue ? " has-issue" : ""}`}>
-      <img src={l.product.image_ref} alt="" width="72" height="54"/>
-      <div className="cart-info"><Link to={`/shop/products/${l.product.id}`}>{l.product.name}</Link>
-        <small>{moneyC(l.product.effective_price_cents, cart.currency)} · {l.product.unit}</small>
-        {l.issue && <p className="field-error" role="alert">{l.issue_message}</p>}</div>
-      <QuantityInput value={l.quantity} max={Math.max(1, Math.min(l.product.available_quantity, store.max_quantity_per_line || 20))}
-        label={`Quantity of ${l.product.name}`}
-        onChange={n => n !== l.quantity && (n < 1 ? null : run(l.item_id, () => api.updateCartItem(l.item_id, n)))}/>
-      <strong className="line-total">{moneyC(l.line_total_cents, cart.currency)}</strong>
-      <button type="button" className="icon-btn" aria-label={`Remove ${l.product.name}`} disabled={busyId === l.item_id}
-        onClick={() => run(l.item_id, () => api.removeCartItem(l.item_id))}><Trash2 size={17}/></button>
-    </li>)}</ul>
-    <section className="totals" aria-label="Order totals">
-      <dl>
-        <div><dt>Subtotal</dt><dd>{moneyC(cart.subtotal_cents, cart.currency)}</dd></div>
-        <div><dt>Delivery</dt><dd>{cart.delivery_fee_cents ? moneyC(cart.delivery_fee_cents, cart.currency) : "Free"}</dd></div>
-        <div className="grand"><dt>Total if delivered</dt><dd>{moneyC(cart.subtotal_cents + cart.delivery_fee_cents, cart.currency)}</dd></div>
-      </dl>
-      <p className="muted-text">{cart.delivery_fee_note}{free ? "" : ""}</p>
-      <div className="cart-actions">
-        <Link className="shop-btn secondary" to="/shop/products">Continue shopping</Link>
-        <button type="button" className="shop-btn" disabled={cart.has_issues}
-          onClick={async () => { const c = await refreshCart(); if (c && !c.has_issues) navigate("/shop/checkout"); else load(); }}>Proceed to checkout</button>
+    <div className="cart-layout">
+      <div>
+        <FreeDelivery subtotal={cart.subtotal_cents} threshold={store.free_delivery_over_cents} currency={cart.currency}/>
+        <ul className="cart-lines">{cart.items.map(l => <li key={l.item_id} className={`cart-line${l.issue ? " has-issue" : ""}`}>
+          <ProductImage product={l.product} alt="" width="84" height="63"/>
+          <div className="cart-info"><Link to={`/shop/products/${l.product.id}`}>{l.product.name}</Link>
+            <small>{moneyC(l.product.effective_price_cents, cart.currency)} · {l.product.unit}</small>
+            {l.issue && <p className="field-error" role="alert">{l.issue_message}</p>}</div>
+          <QuantityInput value={l.quantity} max={Math.max(1, Math.min(l.product.available_quantity, store.max_quantity_per_line || 20))}
+            label={`Quantity of ${l.product.name}`}
+            onChange={n => n !== l.quantity && (n < 1 ? null : run(l.item_id, () => api.updateCartItem(l.item_id, n)))}/>
+          <strong className="line-total">{moneyC(l.line_total_cents, cart.currency)}</strong>
+          <button type="button" className="icon-btn" aria-label={`Remove ${l.product.name}`} disabled={busyId === l.item_id}
+            onClick={() => run(l.item_id, () => api.removeCartItem(l.item_id))}><Trash2 size={18}/></button>
+        </li>)}</ul>
+        <p style={{ marginTop: 14 }}><Link className="shop-btn secondary" to="/shop/products">Continue shopping</Link></p>
       </div>
-    </section>
+      <section className="totals" aria-label="Order totals">
+        <h2>Order summary</h2>
+        <dl>
+          <div><dt>Subtotal</dt><dd>{moneyC(cart.subtotal_cents, cart.currency)}</dd></div>
+          <div><dt>Delivery</dt><dd>{cart.delivery_fee_cents ? moneyC(cart.delivery_fee_cents, cart.currency) : "Free"}</dd></div>
+          <div className="grand"><dt>Total if delivered</dt><dd>{moneyC(cart.subtotal_cents + cart.delivery_fee_cents, cart.currency)}</dd></div>
+        </dl>
+        <p className="muted-text">{cart.delivery_fee_note}</p>
+        <button type="button" className="shop-btn lg block" disabled={cart.has_issues}
+          onClick={async () => { const c = await refreshCart(); if (c && !c.has_issues) navigate("/shop/checkout"); else load(); }}>Proceed to checkout</button>
+        <p className="secure-note"><ShieldCheck size={16} aria-hidden="true"/> Secure checkout. We never see your card number or PIN.</p>
+      </section>
+    </div>
   </div>;
 }

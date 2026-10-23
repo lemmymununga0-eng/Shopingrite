@@ -11,6 +11,7 @@ from sqlalchemy.pool import NullPool
 class Database:
     def __init__(self, url: str):
         self.url = url
+        self.notifier = None          # set by the app; see services/notifications.py
         self.is_sqlite = url.startswith("sqlite")
         if self.is_sqlite:
             path = url.split("///", 1)[-1]
@@ -21,7 +22,10 @@ class Database:
             self.engine = create_engine(url, poolclass=NullPool, connect_args={"timeout": 30, "check_same_thread": False})
             self._configure_sqlite()
         else:
-            self.engine = create_engine(url, pool_pre_ping=True)
+            opts = {"pool_pre_ping": True, "pool_size": 10, "max_overflow": 10, "pool_recycle": 1800}
+            if url.startswith("postgresql+psycopg"):
+                opts["connect_args"] = {"prepare_threshold": None}   # no server-side prepared statements: safe behind poolers
+            self.engine = create_engine(url, **opts)
         self._factory = sessionmaker(self.engine, expire_on_commit=False)
 
     def _configure_sqlite(self):
@@ -49,9 +53,13 @@ class Database:
     def session(self):
         """One transaction: commit on success, roll back on any error, always close."""
         s: Session = self._factory()
+        s.info["notifier"] = self.notifier
         try:
             yield s
             s.commit()
+            for message in s.info.pop("after_commit", []):      # e-mails queued during the transaction: only now is it safe
+                if self.notifier is not None:
+                    self.notifier.deliver(message)
         except Exception:
             s.rollback()
             raise

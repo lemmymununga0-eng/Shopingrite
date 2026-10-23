@@ -1,0 +1,52 @@
+# Render Blueprint: the API. (The website is deployed on Vercel from /frontend: see docs/DEPLOYMENT.md.)
+# Secrets marked `sync: false` are typed into the Render dashboard once; they are never stored in Git.
+services:
+  - type: web
+    name: store-api
+    runtime: python
+    rootDir: backend
+    plan: starter                 # always-on. A free instance sleeps after 15 minutes, which delays payment confirmations.
+    region: frankfurt             # nearest to Zambia among Render's regions; change if you prefer
+    buildCommand: pip install -r requirements.txt && python -m app.ml.train_model --synthetic
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - { key: PYTHON_VERSION, value: 3.12.8 }
+      - { key: ENVIRONMENT, value: production }
+      # --- data: PostgreSQL (Render Postgres or Supabase). Use the "psycopg" form; postgres:// is accepted too.
+      - { key: DATABASE_URL, sync: false }
+      - { key: DB_BACKEND, value: app }
+      # --- identity: Supabase Auth (the project's URL, public anon key and JWT secret)
+      - { key: SUPABASE_URL, sync: false }
+      - { key: SUPABASE_ANON_KEY, sync: false }
+      - { key: SUPABASE_JWT_SECRET, sync: false }
+      # --- web
+      - { key: CORS_ORIGINS, sync: false }      # exactly your Vercel address, e.g. https://my-shop.vercel.app
+      - { key: FRONTEND_URL, sync: false }      # the same address: customers return here after paying
+      - { key: DOCS_ENABLED, value: "false" }
+      # --- store
+      - { key: STORE_NAME, sync: false }
+      - { key: STORE_LEGAL_NAME, sync: false }
+      - { key: STORE_CONTACT_EMAIL, sync: false }
+      - { key: STORE_CONTACT_PHONE, sync: false }
+      - { key: STORE_CONTACT_ADDRESS, sync: false }
+      - { key: SCAMWATCH_PROTECTED_BRANDS, sync: false }   # your brand name(s), comma separated
+      - { key: SCAMWATCH_OFFICIAL_DOMAINS, sync: false }   # your real web addresses, comma separated
+      - { key: STORE_IS_DEMO, value: "false" }
+      - { key: SEED_DEMO_DATA, value: "false" }
+      - { key: STORE_CURRENCY, value: ZMW }
+      - { key: DELIVERY_CITIES, value: "Lusaka,Kitwe,Ndola,Livingstone" }
+      - { key: COD_ENABLED, value: "false" }    # set true to allow cash on delivery
+      - { key: LOCAL_AUTH_ENABLED, value: "false" }
+      - { key: CONSOLE_ADMIN_ONLY, value: "true" }   # only administrators may enter the staff console (set false to let analysts in)
+      # --- payments: Flutterwave (use the TEST secret key first; see docs/DEPLOYMENT.md before going live)
+      - { key: PAYMENTS_SIMULATED_ENABLED, value: "false" }
+      - { key: FLW_SECRET_KEY, sync: false }
+      - { key: FLW_WEBHOOK_HASH, sync: false }
+      # --- optional customer e-mail (leave SMTP_HOST empty to send none)
+      - { key: SMTP_HOST, sync: false }
+      - { key: SMTP_PORT, value: "587" }
+      - { key: SMTP_USER, sync: false }
+      - { key: SMTP_PASSWORD, sync: false }
+      - { key: SMTP_FROM, sync: false }

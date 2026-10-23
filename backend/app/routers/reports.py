@@ -70,7 +70,7 @@ def overview(request: Request, days: Annotated[int, Query(ge=1, le=365)] = 30,
     out_of_stock = session.scalar(select(func.count()).select_from(Inventory).where(Inventory.available_quantity <= 0))
     orders_by_status = _counts(session, Order.status, Order.created_at >= since)
     order_totals = dict(session.execute(select(Order.currency, func.sum(Order.total_cents)).where(
-        Order.created_at >= since, Order.status != "cancelled").group_by(Order.currency)).all())
+        Order.created_at >= since, Order.payment_status == "paid", Order.status != "cancelled").group_by(Order.currency)).all())
     return {
         "period_days": days, "definitions": DEFINITIONS,
         "fraud": None if stats is None else {
@@ -96,7 +96,7 @@ def overview(request: Request, days: Annotated[int, Query(ge=1, le=365)] = 30,
                       "anomaly_cases": session.scalar(select(func.count()).select_from(Case).where(
                           Case.source_type == "order_anomaly"))},
         "orders": {"by_status": orders_by_status, "revenue_by_currency_cents": order_totals,
-                   "note": "Demonstration orders with simulated payment; no real money moved."},
+                   "note": "Revenue counts orders whose payment succeeded (not awaiting, failed or cash on delivery). Demonstration orders use simulated payment; no real money moved."},
         "audit": ({"events_in_period": session.scalar(select(func.count()).select_from(AuditEvent).where(
             AuditEvent.created_at >= since))} if user.has("audit.view") else None),
     }

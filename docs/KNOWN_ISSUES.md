@@ -1,26 +1,38 @@
-# Known Issues and Limitations
+# Known issues and limits (current)
 
-> **Update (store + console MVP):** this file describes the earlier fraud-only prototype. The current blockers and limits are in
-> `IMPLEMENTATION_REPORT.md` (section "Remaining blockers") and `docs/security.md` (section "Known limitations"). Items 1-2 below
-> (live Supabase, Kaggle dataset) are still BLOCKED; items 3-4 are now covered by an axe/375 px browser run, which is not a full
-> accessibility audit or a pixel comparison with any reference design.
+Older audits and reports are in `docs/history/`; they describe earlier states and are kept for reference only.
 
+## Needs something from you before it can be proven (cannot be done from the code alone)
+1. **Flutterwave sandbox and live behaviour.** The payment flow is tested end to end against a faithful fake (backend tests
+   and a real-browser run). Two points in Flutterwave's own documentation are ambiguous and must be confirmed with the
+   acceptance test in `docs/DEPLOYMENT.md`: that the hosted page offers Zambian mobile money for `payment_options:
+   "mobilemoneyzambia"`, and the customer phone field name (`phonenumber`).
+2. **Supabase sign-in in production.** Sign-up, e-mail confirmation, password reset and role claims were never run against a
+   live project here (no credentials, and creating accounts is something only you should do). The API's token checks are
+   covered by tests with signed test tokens.
+3. **PostgreSQL.** The code is written for it and CI runs the store tests against a real PostgreSQL service, but nobody has
+   run it on the machine this was developed on (no database server installed). The first push to GitHub shows the result.
+4. **Real catalogue.** The sample catalogue has invented prices and generic images; production refuses to start with it. Real
+   products, prices and images you may use must be entered by you in the Products screen. There is no image upload (files
+   would vanish on most hosts); use an `https://` link or a file in `frontend/public/products/`.
+5. **Legal text.** Terms, privacy and delivery pages on a live store are plain starting text; have them reviewed.
 
-## Blockers (cannot be completed without something from you)
-1. **Live Supabase sign-in is untested.** A project URL, publishable key and JWT secret are now configured locally (git-ignored `.env` files) and the project's JWKS endpoint was fetched, but no account has completed sign-in (email-confirmation rate limit hit) and the SQL migration has not been run. Sign-up/sign-in, JWKS token verification, PostgREST calls, the SQL migration, RLS policies and the update trigger have not been run against a real project. Only mocked HTTP tests and a SQLite-backed live server run were done.
-2. **Kaggle dataset not on this computer.** The PCA demo model is built and tested on a fixture but untrained on real data; `scripts/download_kaggle.py` needs your Kaggle token. 2b. **No real labelled payment dataset.** The model is trained on synthetic data; its metrics are not evidence of real fraud-detection quality.
-3. **Screenshots were not supplied.** The existing CSS/layout was kept and extended; it could not be compared to your reference images.
-4. **No browser/visual check.** Pages were verified by component tests and a production build, not by looking at them in a browser or testing real phone widths.
+## Product limits
+* Staff roles are assigned in Supabase (SQL), not inside the app: the app never holds Supabase's service-role key.
+* No in-app editing of delivery fees/areas (they are settings), no delivery slots, no per-area fees, no saved addresses.
+* Order risk uses rules, not machine learning. The trained model (synthetic data) powers only the staff "New Payment" simulator.
+* E-mail covers order confirmed / progress / cancelled / refunded. There is no SMS or push, and no e-mail to staff.
+* Refunds are always for the full order amount; partial refunds are done in Flutterwave's dashboard.
+* One currency per store (ZMW by default); amounts are never converted.
 
-## Limitations
-- Per-transaction "observations" are fixed rules, not model explanations (no SHAP/LIME).
-- Rate limiter is in-memory, single process.
-- Supabase dashboard statistics read at most 10,000 rows; use a SQL view for more.
-- Model loading uses pickle (joblib): only load files you trained yourself.
-- No in-app admin screen: analyst/admin roles are assigned in Supabase with SQL (see README).
-- `backend/legacy_kaggle/train_model_kaggle_pca.py` is the old Kaggle PCA script, kept for reference and unused. `backend/data/predictions.json` is the old empty history file, now unused.
-- Currency is shown as ZAR; amounts have no currency conversion.
-- Payment Card page stores only a payment-method preference in browser localStorage.
+## Operations limits
+* The rate limiter and the "similar security events" throttle are in memory: with several API instances limits apply per instance.
+* Real mobile-money confirmations can take minutes; the payment page checks every 5 seconds for 3 minutes, and the server also
+  re-checks every minute, so a late confirmation still settles.
+* A free Render instance sleeps; use an always-on plan for payments.
+* Image credits page and demo wording appear only in demonstration mode (`STORE_IS_DEMO=true`).
 
-## Dependency advisories (see TEST_RESULTS.md for the latest `npm audit`)
-- Python: no auditing tool was available, so Python dependencies were not scanned.
+## Dependency notes
+* `npm audit` (full) reports advisories inside the vitest test runner (dev-only, never shipped). `npm audit --omit=dev` and
+  `pip-audit` are run in CI.
+* Model files use joblib (pickle): only ever load a model you trained yourself; the production build trains one on the server.

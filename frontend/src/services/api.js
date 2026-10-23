@@ -43,7 +43,7 @@ async function request(path, options = {}) {
       },
     });
   } catch {
-    throw new Error("Cannot reach the FraudGuard API. Is the backend running?");
+    throw new Error("Cannot reach the server. Check your connection and try again.");
   }
   const body = await response.json().catch(() => ({}));
   if (response.status === 401 && !path.startsWith("/auth/local/login")) {      // a wrong password is not an expired session
@@ -83,12 +83,23 @@ export const api = {
   addToCart: (product_id, quantity = 1) => request("/cart/items", { method: "POST", body: JSON.stringify({ product_id, quantity }) }),
   updateCartItem: (id, quantity) => request(`/cart/items/${id}`, { method: "PATCH", body: JSON.stringify({ quantity }) }),
   removeCartItem: id => request(`/cart/items/${id}`, { method: "DELETE" }),
-  placeOrder: payload => request("/orders", { method: "POST", body: JSON.stringify(payload) }),
+  placeOrder: (payload, idempotencyKey) => request("/orders", { method: "POST", body: JSON.stringify(payload),
+    headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {} }),
+  payOrder: (id, choice) => request(`/orders/${encodeURIComponent(id)}/pay`, { method: "POST", body: JSON.stringify(choice) }),
+  paymentMethods: () => request("/payments/methods"),
+  simulatePayment: (reference, outcome) => request(`/payments/${encodeURIComponent(reference)}/simulate`, { method: "POST", body: JSON.stringify({ outcome }) }),
+  // real payments (Flutterwave hosted page): link to pay, confirm on return, give up
+  checkoutLink: reference => request(`/payments/${encodeURIComponent(reference)}/checkout-link`, { method: "POST" }),
+  verifyPayment: reference => request(`/payments/${encodeURIComponent(reference)}/verify`, { method: "POST" }),
+  cancelPayment: reference => request(`/payments/${encodeURIComponent(reference)}/cancel`, { method: "POST" }),
   orders: params => request(`/orders${qs(params)}`),
   order: id => request(`/orders/${encodeURIComponent(id)}`),
   cancelOrder: id => request(`/orders/${encodeURIComponent(id)}/cancel`, { method: "POST" }),
+  setOrderStatus: (id, status) => request(`/orders/${encodeURIComponent(id)}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  refundOrder: id => request(`/orders/${encodeURIComponent(id)}/refund`, { method: "POST" }),
 
   // ---- local demo sign-in ----
+  localRegister: (email, password, full_name) => request("/auth/local/register", { method: "POST", body: JSON.stringify({ email, password, full_name }) }),
   localLogin: (email, password) => request("/auth/local/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   me: () => request("/auth/me"),
 
@@ -111,6 +122,17 @@ export const api = {
   securitySummary: days => request(`/security/summary${qs({ days })}`),
   thresholds: () => request("/security/thresholds"),
   setThresholds: values => request("/security/thresholds", { method: "PUT", body: JSON.stringify({ values }) }),
+  staffOrders: params => request(`/staff/orders${qs(params)}`),
+  staffOrder: id => request(`/staff/orders/${encodeURIComponent(id)}`),
+  riskSummary: () => request("/staff/risk-summary"),
+  fraudModelStatus: () => request("/fraud/model-status"),
+  mlSummary: () => request("/staff/ml-summary"),
+  labelQueue: () => request("/staff/label-queue?limit=8"),
+  recordOutcome: (id, body) => request(`/staff/orders/${encodeURIComponent(id)}/outcome`, { method: "POST", body: JSON.stringify(body) }),
+  adminProducts: params => request(`/admin/products${qs(params)}`),
+  createProduct: body => request("/admin/products", { method: "POST", body: JSON.stringify(body) }),
+  updateProduct: (id, body) => request(`/admin/products/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  createCategory: body => request("/admin/categories", { method: "POST", body: JSON.stringify(body) }),
   users: () => request("/admin/users"),
   updateUser: (id, body) => request(`/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   audit: params => request(`/audit${qs(params)}`),

@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..ml.feature_schema import BRANCHES, PAYMENT_METHODS  # noqa: F401  (kept for documentation)
 
 PaymentMethod = Literal["Card", "Bank Transfer", "Mobile Money"]
-Branch = Literal["Online", "Johannesburg CBD", "Cape Town V&A", "Durban North", "Pretoria Central"]
+Branch = Literal["Online", "Lusaka CBD", "Kitwe", "Ndola", "Livingstone"]
 ReviewStatus = Literal["new", "confirmed_fraud", "false_positive"]
 
 

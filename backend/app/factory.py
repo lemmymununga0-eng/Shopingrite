@@ -1,4 +1,5 @@
 """Application factory: builds the FastAPI app so tests can create isolated instances."""
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -10,16 +11,21 @@ from starlette.concurrency import run_in_threadpool
 
 from .config import BACKEND_DIR, Settings, get_settings
 from .core.security import client_hash, correlation_id, resolve_local_secret
-from .db.seed import seed_catalogue, seed_demo_users
+from .db.seed import (convert_demo_currency, convert_demo_images, retire_legacy_demo, seed_catalogue, seed_demo_users,
+                      seed_zambian_catalogue)
+from .db.app_repo import AppRepository
 from .db.session import Database
 from .db.sqlite_repo import SqliteRepository
 from .db.supabase_repo import SupabaseRepository
 from .dependencies import RateLimiter
 from .ml.pca_demo import PcaPredictor
 from .ml.predict import Predictor
-from .routers import (admin, auth_local, cart, inventory, investigations, orders, pca_demo as pca_router, products,
-                      reports, scamwatch, security, system, transactions)
-from .services.scamwatch_service import build_providers
+from .ml.service import ModelService
+from .routers import (fraud as fraud_router, admin, auth_local, cart, inventory, investigations, orders, pca_demo as pca_router, products,
+                      reports, scamwatch, security, system, transactions, payments, staff_orders, catalogue_admin)
+from .services.flutterwave import build_client as build_flw_client
+from .services.notifications import Notifier
+from .services.scamwatch_service import MlUrlProvider, build_providers
 from .services.security_events import SecurityEvents
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -67,39 +73,91 @@ class BodyLimitMiddleware:
         await self.app(scope, limited_receive, replacing_send)
 
 
-def build_repo(s: Settings):
+def build_repo(s: Settings, db: Database | None = None):
+    if s.db_backend == "app":
+        return AppRepository(db)       # the application database: durable on a host with PostgreSQL
     if s.db_backend == "supabase":
         return SupabaseRepository(s.supabase_url, s.supabase_anon_key)
     if s.db_backend == "sqlite":
         return SqliteRepository(s.sqlite_path)
-    raise RuntimeError(f"Unknown DB_BACKEND '{s.db_backend}' (use 'sqlite' or 'supabase')")
+    raise RuntimeError(f"Unknown DB_BACKEND '{s.db_backend}' (use 'app', 'sqlite' or 'supabase')")
+
+
+EXPIRY_SWEEP_SECONDS = 60
+
+
+def _expire_now(app) -> int:
+    from .services.order_service import expire_unpaid_orders
+    with app.state.db.session() as session:
+        return expire_unpaid_orders(session)
+
+
+def _reconcile_now(app) -> int:
+    from .services.payment_flow import reconcile_pending
+    flw = getattr(app.state, "flw", None)
+    return reconcile_pending(app.state.db, flw, app.state.events, settings=app.state.settings) if flw is not None else 0
+
+
+async def _expiry_sweeper(app):
+    """Every minute: settle online payments whose webhook never arrived, then release stock held by orders whose
+    payment window has ended (in that order, so a customer who paid just before the deadline is not expired).
+    Failures are logged, never fatal."""
+    while True:
+        await asyncio.sleep(EXPIRY_SWEEP_SECONDS)
+        try:
+            c = await run_in_threadpool(_reconcile_now, app)
+            if c:
+                log.info("reconciled %s online payment(s)", c)
+        except Exception:
+            log.exception("payment reconcile failed")
+        try:
+            n = await run_in_threadpool(_expire_now, app)
+            if n:
+                log.info("released %s expired unpaid order(s)", n)
+        except Exception:
+            log.exception("expiry sweep failed")
 
 
 def create_app(settings: Settings | None = None, repo=None, predictor: Predictor | None = None,
-               db: Database | None = None, providers: list | None = None) -> FastAPI:
+               db: Database | None = None, providers: list | None = None, flw=None, notifier=None) -> FastAPI:
     s = settings or get_settings()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        if s.environment.lower() == "production":
+            problems = s.production_problems()
+            if problems:
+                raise RuntimeError("Unsafe production configuration:\n  - " + "\n  - ".join(problems))
         if s.local_auth_enabled:
             if s.environment.lower() == "production":
                 raise RuntimeError("LOCAL_AUTH_ENABLED must not be used with ENVIRONMENT=production.")
             s.local_auth_secret = resolve_local_secret(s.local_auth_secret, BACKEND_DIR / "data")
             log.warning("LOCAL DEMO AUTH IS ENABLED. Do not expose this server to other people.")
         app.state.settings = s
-        app.state.repo = repo or build_repo(s)
         app.state.db = db or Database(s.app_database_url)
         app.state.db.create_all()
+        app.state.db.notifier = notifier if notifier is not None else Notifier(s)
+        log.info("customer e-mail: %s", "on" if app.state.db.notifier.enabled else "off (SMTP not configured)")
+        app.state.repo = repo or build_repo(s, app.state.db)
         app.state.events = SecurityEvents(app.state.db)
         app.state.events.seed_thresholds()
         if s.seed_demo_data:
             with app.state.db.session() as session:
-                added = seed_catalogue(session, s.store_currency)
+                added = seed_zambian_catalogue(session, s.store_currency) if s.seed_zm_catalogue else {}
+                if s.seed_legacy_demo:
+                    added.update(seed_catalogue(session, s.store_currency))
+                    added["currency_converted"] = convert_demo_currency(session, s.store_currency)
+                    added["images_converted"] = convert_demo_images(session)
+                else:
+                    added["legacy_retired"] = retire_legacy_demo(session)
                 if s.local_auth_enabled:
                     added["demo_users"] = seed_demo_users(session)
             if any(added.values()):
                 log.info("seeded demonstration data: %s", added)
         app.state.providers = providers if providers is not None else build_providers(s)
+        app.state.flw = flw if flw is not None else build_flw_client(s)
+        log.info("online payments: %s", ("Flutterwave " + ("TEST" if s.flutterwave_test_mode else "LIVE"))
+                 if app.state.flw is not None else "not configured")
         if predictor is None:
             p = Predictor(s.risk_high, s.risk_medium, s.model_threshold)
             p.load(s.model_path)
@@ -108,21 +166,31 @@ def create_app(settings: Settings | None = None, repo=None, predictor: Predictor
             app.state.predictor = predictor
         app.state.pca = PcaPredictor(s.risk_high, s.risk_medium, s.model_threshold)
         app.state.pca.load(s.pca_model_path)
+        app.state.ml = ModelService(s.ml_artifact_dir)
+        app.state.ml.load_all()
+        app.state.db.ml = app.state.ml
+        if providers is None and "ml_url" in s.provider_list:
+            app.state.providers.append(MlUrlProvider(app.state.ml))
         app.state.limiter = RateLimiter()
         pr = app.state.predictor
         log.info("model %s", "loaded " + pr.metadata["version"] if pr.available else "NOT loaded: " + pr.error)
+        sweeper = asyncio.create_task(_expiry_sweeper(app))
         yield
+        sweeper.cancel()
+        if app.state.flw is not None:
+            app.state.flw.close()
+        app.state.db.notifier.close()
         app.state.db.dispose()
 
     app = FastAPI(title="FraudGuard API", version="3.0.0", lifespan=lifespan,
                   docs_url="/docs" if s.docs_enabled else None, redoc_url=None,
                   openapi_url="/openapi.json" if s.docs_enabled else None,
-                  description="Demonstration retail store and fraud/security console. Payments are simulated; "
-                              "no real retailer system is connected.")
+                  description="Online grocery store with a staff fraud and security console.")
     app.add_middleware(BodyLimitMiddleware, max_bytes=s.max_body_bytes)
     app.add_middleware(CORSMiddleware, allow_origins=s.cors_list, allow_credentials=False,
                        allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
-                       allow_headers=["Authorization", "Content-Type", "X-Request-ID"], expose_headers=["X-Request-ID"])
+                       allow_headers=["Authorization", "Content-Type", "X-Request-ID", "Idempotency-Key"],
+                       expose_headers=["X-Request-ID", "Idempotent-Replay"])
 
     @app.middleware("http")
     async def observe(request: Request, call_next):
@@ -192,6 +260,6 @@ def create_app(settings: Settings | None = None, repo=None, predictor: Predictor
                             headers={"X-Request-ID": cid or ""})
 
     for module in (system, auth_local, products, inventory, cart, orders, transactions, pca_router, scamwatch, security,
-                   investigations, reports, admin):
+                   investigations, reports, admin, payments, staff_orders, catalogue_admin, fraud_router):
         app.include_router(module.router)
     return app

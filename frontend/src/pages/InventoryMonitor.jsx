@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Field } from "../components/forms";
 import { EmptyState, ErrorNotice, ErrorState, Modal, PageHeader, Pagination, Skeleton } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
@@ -27,7 +27,8 @@ function AdjustDialog({ item, onClose, onSaved }) {
 
 export default function InventoryMonitor() {
   const { role } = useAuth();
-  const [status, setStatus] = useState("");
+  const [params] = useSearchParams();
+  const [status, setStatus] = useState(["low_stock", "out_of_stock"].includes(params.get("status")) ? params.get("status") : "");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
@@ -39,7 +40,7 @@ export default function InventoryMonitor() {
   useEffect(() => { load(); }, [load]);
 
   return <div>
-    <PageHeader title="Inventory & Order Risk" subtitle="Sample inventory held in the store database (not a retailer feed). Orders that trip the risk rules open cases in the Investigation Centre."
+    <PageHeader title="Inventory" subtitle="Stock held in the store database, with reserved quantities and reorder levels. Orders that trip the risk rules open cases in the Investigation Centre."
       actions={<Link className="btn btn-secondary" to="/investigations">View order-anomaly cases</Link>}/>
     <div className="panel">
       <div className="toolbar" role="search" aria-label="Filter inventory">

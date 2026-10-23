@@ -1,14 +1,19 @@
-"""Order-risk rules. These are plain, documented rules, NOT machine learning and NOT proof of fraud.
+"""Order risk: runs the `store_risk_v1` rule engine (services/store_risk.py) on an order, stores the assessment, and
+opens an investigation case when a person should look.
 
-A triggered rule records a security event and opens (or reuses) an investigation case so a person can look.
-Customer checkout never calls the fraud model: ordinary retail fields do not match its feature contract.
+These are plain, documented rules, NOT machine learning and NOT proof of fraud. Customer checkout never calls the
+trained fraud model: ordinary retail fields do not match its feature contract (no device or country signal exists).
 """
-from datetime import timedelta
+import json
+import logging
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 
 from ..config import Settings
-from ..db.models import Order, SecurityEvent, utcnow
+from ..db.models import Order
+from . import ml_scoring, store_risk
+
+log = logging.getLogger("fraudguard")
 from .investigation_service import ensure_case
 
 RULES = {
@@ -19,36 +24,36 @@ RULES = {
 }
 
 
-def evaluate(db, events, s: Settings, order_id: str, correlation_id: str | None = None) -> list[str]:
-    """Run after the order has committed. Returns the names of triggered rules."""
-    triggered: list[str] = []
+def evaluate(db, events, s: Settings, order_id: str, correlation_id: str | None = None,
+             trigger: str = "order_placed") -> list[str]:
+    """Run after the order (or payment result) has committed. Stores one assessment and returns the names of the rules
+    that fired. A case is opened for a 'review'/'high' decision or when any of the original hard rules fired."""
     with db.session() as session:
         order = session.scalar(select(Order).where(Order.id == order_id))
         if order is None:
             return []
-        if order.total_cents >= s.order_high_value_cents:
-            triggered.append("high_value")
-        if any(i.quantity >= s.order_bulk_quantity for i in order.items):
-            triggered.append("bulk_quantity")
-        hour_ago = utcnow() - timedelta(hours=1)
-        recent = session.scalar(select(func.count()).select_from(Order).where(Order.user_id == order.user_id,
-                                                                             Order.created_at >= hour_ago))
-        if recent >= s.order_velocity_per_hour:
-            triggered.append("order_velocity")
-        ten_min = utcnow() - timedelta(minutes=10)
-        rejected = session.scalar(select(func.count()).select_from(SecurityEvent).where(
-            SecurityEvent.event_type == "order.checkout_rejected", SecurityEvent.actor_id == order.user_id,
-            SecurityEvent.created_at >= ten_min))
-        if rejected >= s.order_rejection_burst:
-            triggered.append("repeated_rejections")
+        a = store_risk.compute(session, order, s)
+        try:
+            ml_rows = ml_scoring.record_for_order(session, getattr(db, "ml", None), order, trigger, a.features)
+        except Exception:                               # model bookkeeping must never break checkout
+            log.exception("ml result could not be recorded for order %s", order_id)
+            ml_rows = []
+        ml_alert = ml_scoring.alert_worthy(ml_rows)
+        previous = store_risk.latest(session, order.id)
+        if previous is not None and previous.score == a.score and previous.reasons_json == json.dumps(a.reasons):
+            return a.rules                      # nothing changed since the last assessment: do not add noise
+        store_risk.save(session, order, a, trigger)
         reference, user_id, total, currency = order.reference, order.user_id, order.total_cents, order.currency
-    if not triggered:
-        return []
-    summary = f"Order {reference} triggered review rules: " + "; ".join(RULES[r] for r in triggered)
-    severity = "high" if len(triggered) >= 2 else "medium"
-    events.record(severity, "order", "order.anomaly", summary, actor_id=user_id, correlation_id=correlation_id,
-                  details={"order_id": order_id, "rules": triggered, "total_cents": total, "currency": currency})
+    needs_case = a.decision != "allow" or any(r in store_risk.HARD_RULES for r in a.rules) or ml_alert
+    if not needs_case:
+        return a.rules
+    summary = (f"Order {reference} scored {a.score}/100 ({a.decision}) by store_risk_v1: "
+               + "; ".join(r["text"] for r in a.reasons))
+    severity = "high" if a.decision == "high" or len(a.rules) >= 2 else "medium"
+    events.record(severity, "order", "order.anomaly", summary[:500], actor_id=user_id, correlation_id=correlation_id,
+                  details={"order_id": order_id, "rules": a.rules, "score": a.score, "decision": a.decision,
+                           "total_cents": total, "currency": currency})
     with db.session() as session:
         ensure_case(session, source_type="order_anomaly", source_record_id=order_id, severity=severity,
                     summary=summary, evidence_reference=f"order:{order_id}", correlation_id=correlation_id)
-    return triggered
+    return a.rules

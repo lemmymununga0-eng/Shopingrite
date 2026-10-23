@@ -33,7 +33,7 @@ def test_successful_checkout_persists_order_and_reduces_stock(client):
     o = r.json()
     assert o["reference"].startswith("ORD-") and o["status"] == "confirmed"
     assert o["subtotal_cents"] == 3 * 2499 + 2 * 4999 and o["delivery_fee_cents"] == 3500
-    assert o["total_cents"] == o["subtotal_cents"] + 3500 and o["currency"] == "ZAR"
+    assert o["total_cents"] == o["subtotal_cents"] + 3500 and o["currency"] == "ZMW"
     assert o["payment_mode"] == "SIMULATED" and "no money" in o["payment_notice"].lower()
     assert {i["sku"] for i in o["items"]} == {"DEMO-FP-001", "DEMO-DE-002"}
     assert (stock(client, "DEMO-FP-001"), stock(client, "DEMO-DE-002")) == (before[0] - 3, before[1] - 2)
@@ -76,9 +76,9 @@ def test_delivery_requires_a_served_address(client):
     put_in_cart(client, h, "DEMO-FP-001", 1)
     r = client.post("/orders", json={"fulfilment": "delivery", "contact": ORDER_BODY["contact"]}, headers=h)
     assert r.status_code == 422 and "address" in r.json()["detail"].lower()
-    far = {**ORDER_BODY["address"], "city": "Lusaka"}
+    far = {**ORDER_BODY["address"], "city": "Mongu"}
     r = checkout(client, h, address=far)
-    assert r.status_code == 422 and "do not deliver to Lusaka" in r.json()["detail"]
+    assert r.status_code == 422 and "do not deliver to Mongu" in r.json()["detail"]
     assert stock(client, "DEMO-FP-001") == 120                          # nothing reserved by the failed attempts
     assert client.get("/cart", headers=h).json()["item_count"] == 1     # cart kept so the shopper can fix the address
 
@@ -100,10 +100,22 @@ def test_order_does_not_expose_or_store_payment_credentials(client):
     assert not cols & {"card_number", "cvv", "card", "pan", "expiry"}
 
 
-def test_unknown_payment_method_rejected(client):
+def test_unknown_payment_method_and_card_data_rejected(client):
     h = cust()
     put_in_cart(client, h, "DEMO-FP-001", 1)
-    assert checkout(client, h, payment={"method": "card"}).status_code == 422
+    assert checkout(client, h, payment={"method": "bitcoin"}).status_code == 422
+    assert checkout(client, h, payment={"method": "simulated", "card_number": "4111111111111111"}).status_code == 422
+
+
+def test_blocked_provider_is_refused_before_any_stock_is_reserved(client):
+    h = cust()
+    put_in_cart(client, h, "DEMO-FP-001", 2)
+    before = stock(client, "DEMO-FP-001")
+    for method in ("card", "airtel_money", "mtn_momo"):
+        r = checkout(client, h, payment={"method": method})
+        assert r.status_code == 503 and r.json()["detail"]["code"] == "provider_not_configured"
+    assert stock(client, "DEMO-FP-001") == before
+    assert client.get("/cart", headers=h).json()["item_count"] == 2          # cart untouched
 
 
 def test_empty_cart_cannot_check_out(client):
@@ -111,8 +123,8 @@ def test_empty_cart_cannot_check_out(client):
     assert r.status_code == 409 and "empty" in r.json()["detail"].lower()
 
 
-@pytest.mark.parametrize("contact", [{"name": "X", "email": "a@b.co", "phone": "0821234567"},
-                                     {"name": "Okay Name", "email": "not-an-email", "phone": "0821234567"},
+@pytest.mark.parametrize("contact", [{"name": "X", "email": "a@b.co", "phone": "0971234567"},
+                                     {"name": "Okay Name", "email": "not-an-email", "phone": "0971234567"},
                                      {"name": "Okay Name", "email": "a@b.co", "phone": "abc"}])
 def test_contact_validation(client, contact):
     h = cust()
@@ -161,9 +173,9 @@ def test_currency_mismatch_is_refused_not_mixed(client):
     h = cust()
     put_in_cart(client, h, "DEMO-FP-001", 1)
     with client.app.state.db.session() as s:
-        s.scalar(select(Product).where(Product.sku == "DEMO-FP-001")).currency = "ZMW"
+        s.scalar(select(Product).where(Product.sku == "DEMO-FP-001")).currency = "USD"
     r = checkout(client, h)
-    assert r.status_code == 409 and "ZMW" in r.json()["detail"]["problems"][0]["message"]
+    assert r.status_code == 409 and "USD" in r.json()["detail"]["problems"][0]["message"]
     r = put_in_cart(client, h, "DEMO-FP-001", 1)                         # also refused when adding to the cart
     assert r.status_code == 409
 
@@ -346,16 +358,17 @@ def test_checkout_failure_leaves_no_partial_state_when_database_errors(client, m
     """An unexpected error half-way through (after stock was deducted) rolls everything back."""
     h = cust()
     put_in_cart(client, h, "DEMO-FP-001", 3)
-    real = order_service.SimulatedPaymentAdapter.authorize
+    from app.services import payment_service
+    real = payment_service.SimulatedProvider.initiate
 
     def boom(self, **kw):
         raise RuntimeError("payment adapter exploded")
 
-    monkeypatch.setattr(order_service.SimulatedPaymentAdapter, "authorize", boom)
+    monkeypatch.setattr(payment_service.SimulatedProvider, "initiate", boom)
     with TestClient(client.app, raise_server_exceptions=False) as c2:
         r = checkout(c2, h)
     assert r.status_code == 500 and "payment adapter exploded" not in r.text
-    monkeypatch.setattr(order_service.SimulatedPaymentAdapter, "authorize", real)
+    monkeypatch.setattr(payment_service.SimulatedProvider, "initiate", real)
     assert stock(client, "DEMO-FP-001") == 120                           # the deduction was rolled back
     assert client.get("/orders", headers=h).json()["total"] == 0
     assert checkout(client, h).status_code == 201                        # and the shopper can simply try again

@@ -25,12 +25,18 @@ const Catalogue = lazy(() => import("./store/Catalogue"));
 const ProductDetail = lazy(() => import("./store/ProductDetail"));
 const Cart = lazy(() => import("./store/Cart"));
 const Checkout = lazy(() => import("./store/Checkout"));
+const Credits = lazy(() => import("./store/Credits"));
+const Info = lazy(() => import("./store/Info"));
+const PaymentResult = lazy(() => import("./store/Payment"));
 const Orders = lazy(() => import("./store/Orders"));
+const Saved = lazy(() => import("./store/Saved"));
 const OrderView = lazy(() => import("./store/Orders").then(m => ({ default: m.OrderView })));
 const Investigations = lazy(() => import("./pages/Investigations"));
 const ScamWatch = lazy(() => import("./pages/ScamWatch"));
 const SecurityMonitor = lazy(() => import("./pages/SecurityMonitor"));
 const InventoryMonitor = lazy(() => import("./pages/InventoryMonitor"));
+const StaffOrders = lazy(() => import("./pages/StaffOrders"));
+const StaffProducts = lazy(() => import("./pages/StaffProducts"));
 const Reports = lazy(() => import("./pages/Reports"));
 const Users = lazy(() => import("./pages/AdminPages").then(m => ({ default: m.Users })));
 const AuditTrail = lazy(() => import("./pages/AdminPages").then(m => ({ default: m.AuditTrail })));
@@ -60,7 +66,7 @@ export function StaffOnly({ children }) {
 export function NotFound() {
   return <div className="not-found"><div>
     <h1>404 — Page not found</h1><p className="muted-text">That page does not exist.</p>
-    <Link className="btn btn-primary" to="/dashboard">Go to Dashboard</Link></div></div>;
+    <Link className="btn btn-primary" to="/dashboard">Go to Dashboard</Link> <Link className="btn btn-secondary" to="/shop">Back to the store</Link></div></div>;
 }
 
 function CheckWebsite() {
@@ -82,8 +88,12 @@ export default function App() {
       <Route index element={lazyEl(<StoreHome/>)}/>
       <Route path="products" element={lazyEl(<Catalogue/>)}/>
       <Route path="products/:id" element={lazyEl(<ProductDetail/>)}/>
+      <Route path="credits" element={lazyEl(<Credits/>)}/>
+      <Route path="info/:topic" element={lazyEl(<Info/>)}/>
+      <Route path="saved" element={lazyEl(<Saved/>)}/>
       <Route path="cart" element={<Protected>{lazyEl(<Cart/>)}</Protected>}/>
       <Route path="checkout" element={<Protected>{lazyEl(<Checkout/>)}</Protected>}/>
+      <Route path="payment/:id" element={<Protected>{lazyEl(<PaymentResult/>)}</Protected>}/>
       <Route path="order-confirmation/:id" element={<Protected>{lazyEl(<OrderView confirmation/>)}</Protected>}/>
       <Route path="orders" element={<Protected>{lazyEl(<Orders/>)}</Protected>}/>
       <Route path="orders/:id" element={<Protected>{lazyEl(<OrderView/>)}</Protected>}/>
@@ -98,6 +108,8 @@ export default function App() {
       <Route path="/scamwatch" element={lazyEl(<ScamWatch/>)}/>
       <Route path="/security" element={lazyEl(<SecurityMonitor/>)}/>
       <Route path="/inventory" element={lazyEl(<InventoryMonitor/>)}/>
+      <Route path="/orders" element={lazyEl(<StaffOrders/>)}/>
+      <Route path="/products" element={lazyEl(<StaffProducts/>)}/>
       <Route path="/reports" element={lazyEl(<Reports/>)}/>
       <Route path="/users" element={lazyEl(<Users/>)}/>
       <Route path="/audit" element={lazyEl(<AuditTrail/>)}/>

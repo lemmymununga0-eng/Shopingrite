@@ -145,3 +145,54 @@ def test_docs_can_be_disabled(settings):
     settings.docs_enabled = False
     with TestClient(create_app(settings)) as c:
         assert c.get("/docs").status_code == 404 and c.get("/openapi.json").status_code == 404
+
+
+# ---------------------------------------------------------------- local registration (demonstration mode)
+def _register(c, email="new.shopper@example.com", pw="Shopper2026", name="New Shopper", **extra):
+    return c.post("/auth/local/register", json={"email": email, "password": pw, "full_name": name, **extra})
+
+
+def test_local_registration_is_off_unless_local_auth_is_on(client):
+    assert _register(client).status_code == 404
+
+
+def test_a_registered_customer_is_signed_in_and_can_log_in_again(local_client):
+    r = _register(local_client)
+    assert r.status_code == 201
+    d = r.json()
+    assert d["user"]["role"] == "customer" and d["user"]["email"] == "new.shopper@example.com" and d["access_token"]
+    assert local_client.get("/auth/me", headers={"Authorization": f"Bearer {d['access_token']}"}).json()["role"] == "customer"
+    again = login(local_client, "NEW.Shopper@Example.com", "Shopper2026")          # email is case-insensitive
+    assert again.status_code == 200 and again.json()["user"]["role"] == "customer"
+    assert login(local_client, "new.shopper@example.com", "wrong-pass1").status_code == 401
+
+
+def test_registration_can_never_create_staff(local_client):
+    assert _register(local_client, role="admin").status_code == 422                 # unknown field is refused
+    assert _register(local_client, email="a@example.com", name="A Admin").json()["user"]["role"] == "customer"
+
+
+def test_registration_validation_and_duplicates(local_client):
+    assert _register(local_client, email="not-an-email").status_code == 422
+    assert _register(local_client, pw="short1").status_code == 422
+    assert _register(local_client, pw="onlyletters").status_code == 422
+    assert _register(local_client, pw="12345678").status_code == 422
+    assert _register(local_client, name="x").status_code == 422
+    assert _register(local_client).status_code == 201
+    dup = _register(local_client)
+    assert dup.status_code == 409 and "already exists" in dup.json()["detail"]
+    assert _register(local_client, email="customer@example.com").status_code == 409  # cannot take a demo account's email
+
+
+def test_registered_customers_can_shop_but_not_enter_the_console(local_client):
+    tok = _register(local_client).json()["access_token"]
+    h = {"Authorization": f"Bearer {tok}"}
+    assert local_client.get("/cart", headers=h).status_code == 200
+    assert local_client.get("/staff/orders", headers=h).status_code == 403
+
+
+def test_registration_is_rate_limited(local_settings):
+    local_settings.login_rate_limit_per_min = 3
+    with TestClient(create_app(local_settings)) as c:
+        codes = [_register(c, email=f"u{i}@example.com").status_code for i in range(5)]
+    assert codes[:3] == [201, 201, 201] and codes[3] == 429

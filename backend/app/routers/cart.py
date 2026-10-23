@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from ..auth import User, require
 from ..dependencies import get_session, limited
 from ..schemas.store import CartAdd, CartOut, CartUpdate
-from ..services import cart_service
+from ..services import cart_service, order_service
 
 router = APIRouter(tags=["cart"])
 guard = Depends(limited("cart", "cart_rate_limit_per_min"))
@@ -19,6 +19,7 @@ def read_cart(request: Request, user: User = Depends(require("store.shop")), ses
 def add_to_cart(body: CartAdd, request: Request, user: User = Depends(require("store.shop")),
                 session=Depends(get_session)):
     s = request.app.state.settings
+    order_service.expire_unpaid_orders(session)          # units from abandoned orders are back on sale before we check stock
     cart_service.add_item(session, user.id, body.product_id, body.quantity, s)
     return cart_service.cart_view(session, user.id, s)
 
@@ -27,6 +28,7 @@ def add_to_cart(body: CartAdd, request: Request, user: User = Depends(require("s
 def update_cart_item(item_id: int, body: CartUpdate, request: Request, user: User = Depends(require("store.shop")),
                      session=Depends(get_session)):
     s = request.app.state.settings
+    order_service.expire_unpaid_orders(session)
     cart_service.update_item(session, user.id, item_id, body.quantity, s)
     return cart_service.cart_view(session, user.id, s)
 

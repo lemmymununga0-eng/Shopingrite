@@ -37,7 +37,7 @@ def test_overview_reflects_stored_records(client):
     d = client.get("/reports/overview", headers=admin_h()).json()
     assert d["fraud"]["transactions_analysed"] == 2 and d["fraud"]["flagged"] == 1
     assert d["cases"]["open"] == 1 and d["cases"]["by_source"] == {"fraud_prediction": 1}
-    assert d["orders"]["by_status"] == {"confirmed": 1} and d["orders"]["revenue_by_currency_cents"]["ZAR"] > 0
+    assert d["orders"]["by_status"] == {"confirmed": 1} and d["orders"]["revenue_by_currency_cents"]["ZMW"] > 0
     assert "no real money" in d["orders"]["note"].lower()
     assert d["security"] is not None and d["audit"]["events_in_period"] >= 1
     case_id = d["cases"]["recent"][0]["id"]
@@ -160,7 +160,7 @@ def test_migrations_are_idempotent_and_preserve_data(tmp_path):
     assert db.create_all() == [v for v, _, _ in MIGRATIONS]
     from app.db.seed import seed_catalogue
     with db.session() as s:
-        seed_catalogue(s, "ZAR")
+        seed_catalogue(s, "ZMW")
     assert db.create_all() == [] and migrate(db.engine) == []
     with db.session() as s:
         assert len(s.scalars(select(Product)).all()) == 40

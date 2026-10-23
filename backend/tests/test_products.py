@@ -17,7 +17,7 @@ def test_catalogue_is_public_and_paginated(client):
     for key in ("id", "sku", "name", "description", "price_cents", "currency", "image_ref", "stock_status",
                 "available_quantity", "effective_price_cents", "category_slug"):
         assert key in p
-    assert p["currency"] == "ZAR" and p["is_demo"] is True
+    assert p["currency"] == "ZMW" and p["is_demo"] is True
 
 
 def test_categories_have_counts(client):
@@ -66,7 +66,7 @@ def test_product_detail_and_404(client):
 
 def test_store_info_is_labelled_demo(client):
     d = client.get("/store-info").json()
-    assert d["is_demo"] is True and d["currency"] == "ZAR"
+    assert d["is_demo"] is True and d["currency"] == "ZMW"
     assert "not affiliated" in d["disclaimer"] and "simulated" in d["disclaimer"].lower()
 
 
@@ -76,7 +76,7 @@ def test_seed_is_idempotent_and_never_overwrites(client, settings):
         s.execute(Product.__table__.update().where(Product.sku == "DEMO-FP-001").values(name="Renamed by owner"))
         s.execute(Inventory.__table__.update().where(Inventory.product_id == 1).values(available_quantity=7))
     with db.session() as s:
-        assert seed_catalogue(s, "ZAR") == {"categories": 0, "products": 0}
+        assert seed_catalogue(s, "ZMW") == {"categories": 0, "products": 0}
     with db.session() as s:
         assert s.scalar(select(func.count()).select_from(Product)) == 40
         assert s.scalar(select(Product.name).where(Product.sku == "DEMO-FP-001")) == "Renamed by owner"

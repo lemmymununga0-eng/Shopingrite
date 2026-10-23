@@ -16,10 +16,12 @@ def store_info(request: Request):
     return {"name": s.store_name, "currency": s.store_currency, "is_demo": s.store_is_demo,
             "delivery_cities": s.city_list, "delivery_fee_cents": s.delivery_fee_cents,
             "free_delivery_over_cents": s.free_delivery_over_cents, "max_quantity_per_line": s.max_quantity_per_line,
-            "local_auth_enabled": s.local_auth_enabled,
+            "local_auth_enabled": s.local_auth_enabled, "console_admin_only": s.console_admin_only,
+            "legal_name": s.store_legal_name or s.store_name, "contact_email": s.store_contact_email,
+            "contact_phone": s.store_contact_phone, "contact_address": s.store_contact_address,
             "disclaimer": ("Independent demonstration store with sample products and sample stock. It is not "
                            "affiliated with, endorsed by, or connected to any real retailer. Payments are simulated; "
-                           "no money is taken.")}
+                           "no money is taken.") if s.store_is_demo else ""}
 
 
 @router.get("/categories", response_model=list[CategoryOut])
@@ -32,7 +34,7 @@ def products(search: Annotated[str | None, Query(max_length=60)] = None,
              category: Annotated[str | None, Query(max_length=60, pattern=r"^[a-z0-9-]+$")] = None,
              min_price: Annotated[float | None, Query(ge=0, le=1_000_000)] = None,
              max_price: Annotated[float | None, Query(ge=0, le=1_000_000)] = None,
-             sort: Literal["name", "price_asc", "price_desc", "newest"] = "name",
+             sort: Literal["name", "price_asc", "price_desc", "newest", "popular"] = "name",
              in_stock_only: bool = False, on_offer: bool = False, featured: bool = False,
              page: Annotated[int, Query(ge=1, le=10000)] = 1, page_size: Annotated[int, Query(ge=1, le=60)] = 12,
              session=Depends(get_session)):

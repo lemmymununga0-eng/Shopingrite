@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { LockKeyhole, ShieldCheck } from "lucide-react";
+import { LockKeyhole, ShieldCheck, ArrowLeft } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function ResetPassword() {
@@ -21,8 +21,9 @@ export default function ResetPassword() {
     finally { setBusy(false); }
   }
 
-  return <div className="auth-page auth-single">
+  return <div className="auth-page auth-single shop">
     <section className="auth-form-side"><form className="auth-card" onSubmit={submit}>
+      <Link className="back-link" to="/shop"><ArrowLeft size={15} aria-hidden="true"/> Back to the store</Link>
       <h2><ShieldCheck size={20}/> Choose a new password</h2>
       {!loading && !user && <div className="notice info">Open this page from the link in your reset email. <Link to="/forgot-password">Request a new link</Link></div>}
       {error && <div className="notice error" role="alert">{error}</div>}

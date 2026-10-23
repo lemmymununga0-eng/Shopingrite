@@ -24,10 +24,23 @@ def _model(request: Request):
     return request.app.state.pca
 
 
+def _verified(request: Request):
+    """The registry's creditcard_pca model (real data, validated, checksum-verified) when it is ready; otherwise None and the
+    older single-file demo model is used."""
+    ml = getattr(request.app.state, "ml", None)
+    return ml if ml is not None and ml.result("creditcard_pca").ready else None
+
+
 @router.get("/info")
 def info(request: Request, user: User = Depends(require("fraud.view"))):
     m = _model(request)
     base = {"label": "Kaggle PCA dataset demonstration (separate from the payment form)", "features": pca_demo.FEATURES}
+    ml = _verified(request)
+    if ml is not None:
+        st = ml.status("creditcard_pca")
+        return {**base, "trained": True, "source": "verified registry model", "version": st["version"], "trained_at": st["trained_at"],
+                "data_source": st["dataset"]["name"], "source_note": st["dataset"]["source"], "n_rows": st["split"]["train_rows"] + st["split"]["test_rows"],
+                "threshold": st["threshold"], "metrics": st["test_metrics"], "is_fixture": st["is_fixture"]}
     if not m.available:
         return {**base, "trained": False, "message": m.error}
     md = m.metadata
@@ -39,6 +52,15 @@ def info(request: Request, user: User = Depends(require("fraud.view"))):
 @router.post("/predict")
 def predict(body: PcaRequest, request: Request, user: User = Depends(predict_rate_limit),
             _allowed: User = Depends(require("fraud.predict"))):
+    ml = _verified(request)
+    if ml is not None:
+        res = ml.predict("creditcard_pca", dict(body.features))
+        if res["status"] != "ok":
+            raise HTTPException(422 if res["status"] in ("unsupported_input_schema", "invalid_input") else 503, detail=res)
+        p, thr = res["probability"], res["threshold"]
+        return {**res, "prediction": int(res["flagged"]), "fraud_probability": p,
+                "risk_level": "High" if p >= thr else "Medium" if p >= thr / 2 else "Low", "saved": False,
+                "note": "Model estimate on anonymised PCA features. Not proof of fraud and not saved to history."}
     m = _model(request)
     if not m.available:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"PCA demo model unavailable: {m.error}")

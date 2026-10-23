@@ -41,4 +41,11 @@ frontend/test-results/
 frontend/playwright-report/
 backend/data/e2e/
 frontend/e2e/.backend.pid
+frontend/e2e/.fake-flw.pid
 backend/models/*.bak*
+
+# public datasets downloaded by scripts/fetch_datasets.py (large, separately licensed)
+backend/data/external/
+
+# trained model artifacts (regenerate with python -m app.ml.train; never commit)
+backend/artifacts/

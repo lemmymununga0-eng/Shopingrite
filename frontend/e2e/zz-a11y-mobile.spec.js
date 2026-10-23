@@ -1,7 +1,7 @@
 // Accessibility (axe) and mobile-layout checks against the running app.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { signInAs } from "./helpers.js";
+import { emptyCart, signInAs } from "./helpers.js";
 
 const seriousOrWorse = results => results.violations.filter(v => ["serious", "critical"].includes(v.impact));
 const describeViolations = list => list.map(v => `${v.id} (${v.impact}): ${v.nodes.slice(0, 3).map(n => n.target.join(" ")).join(" | ")}`).join("\n");
@@ -32,6 +32,7 @@ test.describe("accessibility (axe, WCAG 2.1 A/AA, serious and critical only)", (
   });
   test("cart and checkout", async ({ page }) => {
     await signInAs(page, "Customer (store)");
+    await emptyCart(page);
     await page.goto("/shop/products?search=milk");
     await page.getByRole("button", { name: /add to cart: full cream milk/i }).click();
     await expect(page.getByText(/added 1 × full cream milk/i)).toBeVisible();
@@ -45,7 +46,8 @@ test.describe("accessibility (axe, WCAG 2.1 A/AA, serious and critical only)", (
   test("staff console pages", async ({ page }) => {
     await signInAs(page, "Administrator");
     for (const [link, heading] of [["Dashboard", /dashboard/i], ["Investigations", "Investigation Centre"], ["Security Monitor", "Security Monitor"],
-      ["ScamWatch", "ScamWatch"], ["Inventory & Orders", /inventory & order risk/i], ["Reports", /reports & business impact/i]]) {
+      ["ScamWatch", "ScamWatch"], ["Inventory", /^inventory$/i], ["Orders & Risk", "Orders & Risk"], ["Products", "Products"],
+      ["Reports", /reports & business impact/i]]) {
       await page.getByRole("link", { name: link, exact: true }).click();
       await expect(page.getByRole("heading", { name: heading }).first()).toBeVisible();
       await scan(page, link);
@@ -74,6 +76,7 @@ test.describe("mobile layout (375 x 812)", () => {
   });
   test("cart and checkout fit the screen", async ({ page }) => {
     await signInAs(page, "Customer (store)");
+    await emptyCart(page);
     await page.goto("/shop/products?search=milk");
     await page.getByRole("button", { name: /add to cart: full cream milk/i }).click();
     await expect(page.getByText(/added 1 × full cream milk/i)).toBeVisible();

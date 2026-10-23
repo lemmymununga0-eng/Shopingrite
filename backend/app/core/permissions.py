@@ -21,6 +21,7 @@ PERMISSIONS: dict[str, set[str]] = {
     "inventory.adjust": {ADMIN},
     "orders.view_all": _ALL_STAFF,
     "orders.manage": {ADMIN},
+    "catalogue.manage": {ADMIN},
     # fraud model, predictions and alerts
     "fraud.predict": _ALL_STAFF,
     "fraud.view": _ALL_STAFF,

@@ -11,6 +11,8 @@ export function AuthProvider({ children }) {
   // Without Supabase, a local DEMO session (if any) is restored from this tab's sessionStorage.
   const [user, setUser] = useState(() => (supabase ? null : getLocalSession()?.user || null));
   const [loading, setLoading] = useState(true);
+  const [adminOnly, setAdminOnly] = useState(false);     // the server's CONSOLE_ADMIN_ONLY switch (the server enforces it; this only hides links)
+  useEffect(() => { Promise.resolve(api.storeInfo?.()).then(d => setAdminOnly(Boolean(d?.console_admin_only))).catch(() => {}); }, []);
 
   useEffect(() => {
     if (!supabase) { setLoading(false); return; }
@@ -41,6 +43,7 @@ export function AuthProvider({ children }) {
       throw new Error("Sign-in failed. Check your email and password, or register if you have no account yet.");
     }
     setUser(data.user);
+    return data.user;
   }
 
   /** Local DEMONSTRATION sign-in (backend LOCAL_AUTH_ENABLED=true). Not a production login. */
@@ -48,6 +51,15 @@ export function AuthProvider({ children }) {
     const d = await api.localLogin(email, password);
     const profile = { id: d.user.id, email: d.user.email, user_metadata: { full_name: d.user.full_name },
                       app_metadata: { role: d.user.role } };
+    setLocalSession({ token: d.access_token, user: profile });
+    setUser(profile);
+    return profile;
+  }
+
+  /** Local DEMONSTRATION sign-up (backend LOCAL_AUTH_ENABLED=true): creates a customer account and signs it in. */
+  async function registerLocal(email, password, fullName) {
+    const d = await api.localRegister(email, password, fullName);
+    const profile = { id: d.user.id, email: d.user.email, user_metadata: { full_name: d.user.full_name }, app_metadata: { role: d.user.role } };
     setLocalSession({ token: d.access_token, user: profile });
     setUser(profile);
     return profile;
@@ -89,11 +101,12 @@ export function AuthProvider({ children }) {
   }
 
   // Display only. The API decides what this user may do, from the verified token.
-  const role = user?.app_metadata?.role || "customer";
+  const tokenRole = user?.app_metadata?.role || "customer";
+  const role = adminOnly && ["fraud_analyst", "security_analyst", "analyst"].includes(tokenRole) ? "customer" : tokenRole;
   const configured = Boolean(supabase);
   const isStaff = STAFF_ROLES.includes(role);
 
-  return <Context.Provider value={{ user, loading, role, isStaff, configured, login, loginLocal, register, logout, requestPasswordReset, updatePassword, updateProfile }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ user, loading, role, isStaff, configured, login, loginLocal, registerLocal, register, logout, requestPasswordReset, updatePassword, updateProfile }}>{children}</Context.Provider>;
 }
 
 export function useAuth() { return useContext(Context); }

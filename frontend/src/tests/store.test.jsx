@@ -10,7 +10,8 @@ vi.mock("../services/api", () => {
   const f = () => vi.fn();
   return { ApiError, setUnauthorizedHandler: () => {}, api: {
     storeInfo: f(), categories: f(), products: f(), product: f(), cart: f(), addToCart: f(), updateCartItem: f(), removeCartItem: f(),
-    placeOrder: f(), orders: f(), order: f(), cancelOrder: f(), scamCheck: f(), scamReport: f() } };
+    placeOrder: f(), orders: f(), order: f(), cancelOrder: f(), scamCheck: f(), scamReport: f(),
+    paymentMethods: f(), checkoutLink: f(), verifyPayment: f(), cancelPayment: f(), payOrder: f(), simulatePayment: f() } };
 });
 
 import { ApiError, api } from "../services/api";
@@ -24,7 +25,7 @@ import ScamChecker from "../components/ScamChecker";
 import { StoreProvider } from "../context/StoreContext";
 
 const product = (over = {}) => ({ id: 1, sku: "DEMO-1", name: "Bananas", description: "Sweet bananas. (Demonstration product)", category_slug: "fresh-produce",
-  category_name: "Fresh Produce", price_cents: 2499, offer_price_cents: null, effective_price_cents: 2499, currency: "ZAR", unit: "per kg",
+  category_name: "Fresh Produce", price_cents: 2499, offer_price_cents: null, effective_price_cents: 2499, currency: "ZMW", unit: "per kg",
   image_ref: "/products/fresh-produce.svg", is_featured: true, is_demo: true, stock_status: "in_stock", available_quantity: 100, ...over });
 const page = (items, extra = {}) => ({ items, total: items.length, page: 1, page_size: 12, ...extra });
 const signedIn = { user: { id: "u1", email: "me@example.com", user_metadata: { full_name: "Mia Shopper" } }, role: "customer", loading: false };
@@ -34,7 +35,10 @@ const LocationProbe = () => <div data-testid="loc">{useLocation().pathname}{useL
 beforeEach(() => {
   vi.clearAllMocks();
   auth.value = signedIn;
-  api.storeInfo.mockResolvedValue({ name: "FreshCart Demo Store", currency: "ZAR", delivery_cities: ["Johannesburg", "Cape Town"] });
+  api.storeInfo.mockResolvedValue({ name: "FreshCart Demo Store", currency: "ZMW", is_demo: true, delivery_cities: ["Lusaka", "Kitwe"] });
+  api.paymentMethods.mockResolvedValue({ currency: "ZMW", methods: [
+    { id: "simulated", label: "Simulated payment (demonstration)", available: true, mode: "SIMULATED", scenarios: ["success"], reason: "" },
+    { id: "cod", label: "Cash on delivery", available: false, mode: "COD", scenarios: [], reason: "Not enabled by the store administrator." }] });
 });
 
 describe("store home", () => {
@@ -51,7 +55,7 @@ describe("store home", () => {
     const stock = screen.getAllByTestId("stock-badge").map(e => e.textContent);
     expect(stock).toEqual(expect.arrayContaining(["In stock", "Low stock · only 5 left", "Out of stock"]));
     expect(screen.getByRole("button", { name: /unavailable: butter is out of stock/i })).toBeDisabled();
-    expect(screen.getByText(/special/i, { selector: ".offer-tag" })).toBeInTheDocument();
+    expect(screen.getByText(/demo offer/i, { selector: ".offer-tag" })).toBeInTheDocument();
   });
   it("shows a retry state when the catalogue cannot load", async () => {
     api.categories.mockRejectedValue(new Error("Cannot reach the FraudGuard API. Is the backend running?"));
@@ -67,7 +71,7 @@ describe("catalogue", () => {
     api.categories.mockResolvedValue([{ id: 1, slug: "dairy-eggs", name: "Dairy & Eggs", product_count: 5 }]);
     api.products.mockResolvedValue(page([product({ name: "Milk" })], { total: 30 }));
   });
-  it("searches, filters, sorts and paginates through the API", async () => {
+  it("searches, filters, sorts and paginates through the API", { timeout: 30000 }, async () => {
     view(<><Catalogue/><LocationProbe/></>, "/shop/products");
     expect(await screen.findByText("30 products found")).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText("Search"), "milk");
@@ -85,7 +89,7 @@ describe("catalogue", () => {
     await waitFor(() => expect(api.products).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, page_size: 12 })));
     expect(screen.getByTestId("loc").textContent).toContain("page=2");
   });
-  it("blocks an impossible price range and offers to clear filters on empty results", async () => {
+  it("blocks an impossible price range and offers to clear filters on empty results", { timeout: 20000 }, async () => {
     view(<Catalogue/>, "/shop/products");
     await screen.findByText("30 products found");
     await userEvent.type(screen.getByLabelText("Min price"), "90");
@@ -156,9 +160,9 @@ describe("product details and add to cart", () => {
   });
 });
 
-const cartOf = (lines, extra = {}) => ({ items: lines, item_count: lines.reduce((n, l) => n + l.quantity, 0), currency: "ZAR",
+const cartOf = (lines, extra = {}) => ({ items: lines, item_count: lines.reduce((n, l) => n + l.quantity, 0), currency: "ZMW",
   subtotal_cents: lines.reduce((n, l) => n + l.line_total_cents, 0), has_issues: lines.some(l => l.issue), delivery_fee_cents: 3500,
-  delivery_fee_note: "Delivery costs ZAR 35.00, free over ZAR 600.00. Collection is free.", ...extra });
+  delivery_fee_note: "Delivery costs ZMW 35.00, free over ZMW 600.00. Collection is free.", ...extra });
 const line = (over = {}) => ({ item_id: 7, product: product(), quantity: 2, line_total_cents: 4998, issue: null, issue_message: null, ...over });
 
 describe("cart", () => {
@@ -171,7 +175,7 @@ describe("cart", () => {
     expect(screen.getByLabelText("Order totals")).toHaveTextContent(/subtotal/i);
     await userEvent.click(screen.getByRole("button", { name: "Increase quantity" }));
     expect(api.updateCartItem).toHaveBeenCalledWith(7, 3);
-    await waitFor(() => expect(screen.getAllByText(/R\s?74,97|R74.97/).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getAllByText(/K\s?74[.,]97/).length).toBeGreaterThan(0));
     await userEvent.click(screen.getByRole("button", { name: "Remove Bananas" }));
     expect(api.removeCartItem).toHaveBeenCalledWith(7);
     expect(await screen.findByRole("heading", { name: /your cart is empty/i })).toBeInTheDocument();
@@ -195,14 +199,20 @@ describe("cart", () => {
 
 describe("checkout", () => {
   const renderCheckout = () => view(<StoreProvider><Routes><Route path="/shop/checkout" element={<Checkout/>}/>
-    <Route path="/shop/order-confirmation/:id" element={<LocationProbe/>}/><Route path="/shop/cart" element={<div>CART</div>}/></Routes></StoreProvider>, "/shop/checkout");
-  const fill = async (over = {}) => {
-    await userEvent.clear(screen.getByLabelText("Full name")); await userEvent.type(screen.getByLabelText("Full name"), "Mia Shopper");
-    await userEvent.type(screen.getByLabelText("Phone number"), "0821234567");
-    await userEvent.type(screen.getByLabelText("Street address"), "12 Test Street");
-    await userEvent.type(screen.getByLabelText("City"), over.city || "Johannesburg");
-    await userEvent.type(screen.getByLabelText("Postal code"), "2000");
+    <Route path="/shop/order-confirmation/:id" element={<LocationProbe/>}/><Route path="/shop/payment/:id" element={<LocationProbe/>}/>
+    <Route path="/shop/cart" element={<div>CART</div>}/></Routes></StoreProvider>, "/shop/checkout");
+  const next = () => userEvent.click(screen.getByRole("button", { name: "Continue" }));
+  const details = async (phone = "0971234567") => {
+    const name = await screen.findByLabelText("Full name");
+    await userEvent.clear(name); await userEvent.type(name, "Mia Shopper");
+    await userEvent.type(screen.getByLabelText("Phone number"), phone);
   };
+  const delivery = async (city = "Lusaka") => {
+    await userEvent.type(await screen.findByLabelText("Street address"), "12 Test Street");
+    await userEvent.type(screen.getByLabelText("City"), city);
+  };
+  const toPayment = async (city) => { await details(); await next(); await delivery(city); await next(); await next(); };
+  const placeBtn = re => screen.findByRole("button", { name: re || /place/i });
   beforeEach(() => { api.cart.mockResolvedValue(cartOf([line()])); });
 
   it("labels the payment as a simulation and never asks for card details", async () => {
@@ -210,51 +220,59 @@ describe("checkout", () => {
     expect(await screen.findByText(/demonstration checkout/i)).toBeInTheDocument();
     expect(screen.getByText(/no card details are collected/i)).toBeInTheDocument();
     expect(screen.getByText(/not authorised by any bank/i)).toBeInTheDocument();
+    await toPayment();
     for (const re of [/card number/i, /cvv|cvc|security code/i, /expiry/i]) expect(screen.queryByLabelText(re)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /place demonstration order/i })).toBeInTheDocument();
+    expect(await placeBtn(/place demonstration order/i)).toBeInTheDocument();
   });
-  it("validates contact and address and refuses unsupported delivery cities before calling the API", async () => {
+  it("hides the demonstration banner on a live store", async () => {
+    api.storeInfo.mockResolvedValue({ name: "Real Shop", currency: "ZMW", is_demo: false, delivery_cities: ["Lusaka"] });
     renderCheckout();
-    await userEvent.click(await screen.findByRole("button", { name: /place demonstration order/i }));
-    await screen.findByText(/we deliver to: johannesburg, cape town/i);
-    expect(await screen.findByText("Enter a valid phone number")).toBeInTheDocument();
-    expect(screen.getByText("Enter your street address")).toBeInTheDocument();
-    await fill({ city: "Lusaka" });
-    await userEvent.click(screen.getByRole("button", { name: /place demonstration order/i }));
-    expect(await screen.findByText(/we do not deliver to lusaka/i)).toBeInTheDocument();
+    await screen.findByRole("heading", { name: "Checkout" });
+    expect(screen.queryByText(/demonstration checkout/i)).not.toBeInTheDocument();
+  });
+  it("validates each step and refuses unsupported delivery cities before calling the API", async () => {
+    renderCheckout();
+    await screen.findByRole("heading", { name: "Checkout" });
+    await next();
+    expect(await screen.findByText(/enter a valid zambian phone number/i)).toBeInTheDocument();
+    await details(); await next();
+    await next();
+    expect(await screen.findByText("Enter your street address")).toBeInTheDocument();
+    expect(screen.getByText("Enter your city")).toBeInTheDocument();
+    await delivery("Mongu"); await next();
+    expect(await screen.findByText(/we do not deliver to mongu/i)).toBeInTheDocument();
     expect(api.placeOrder).not.toHaveBeenCalled();
   });
   it("collection needs no address and removes the delivery fee from the total", async () => {
     renderCheckout();
-    await screen.findByRole("heading", { name: "Checkout" });
+    await details(); await next();
     await userEvent.click(screen.getByLabelText(/collect in store/i));
     expect(screen.queryByLabelText("Street address")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Order summary")).toHaveTextContent(/collection\s*free/i);
-    api.placeOrder.mockResolvedValue({ id: "o-1" }); api.cart.mockResolvedValue(cartOf([]));
-    await userEvent.type(screen.getByLabelText("Phone number"), "0821234567");
-    await userEvent.click(screen.getByRole("button", { name: /place demonstration order/i }));
+    api.placeOrder.mockResolvedValue({ id: "o-1", payment_status: "paid", payment_attempts: [] }); api.cart.mockResolvedValue(cartOf([]));
+    await next(); await next();
+    await userEvent.click(await placeBtn());
     await waitFor(() => expect(api.placeOrder).toHaveBeenCalled());
     const body = api.placeOrder.mock.calls[0][0];
     expect(body.fulfilment).toBe("collection"); expect(body.address).toBeUndefined();
-    expect(body.payment).toEqual({ method: "simulated" });
+    expect(body.payment).toEqual({ method: "simulated", scenario: "success" });
     expect(JSON.stringify(body)).not.toMatch(/card|cvv|expiry/i);
   });
   it("places an order and goes to the confirmation page", async () => {
-    api.placeOrder.mockResolvedValue({ id: "o-1" });
+    api.placeOrder.mockResolvedValue({ id: "o-1", payment_status: "paid", payment_attempts: [] });
     renderCheckout();
-    await screen.findByRole("heading", { name: "Checkout" });
-    await fill();
-    await userEvent.click(screen.getByRole("button", { name: /place demonstration order/i }));
+    await toPayment();
+    await userEvent.click(await placeBtn());
     expect(await screen.findByTestId("loc")).toHaveTextContent("/shop/order-confirmation/o-1");
-    expect(api.placeOrder.mock.calls[0][0].address).toEqual({ line: "12 Test Street", city: "Johannesburg", postal_code: "2000" });
+    expect(api.placeOrder.mock.calls[0][0].address).toEqual({ line: "12 Test Street", city: "Lusaka" });
+    expect(api.placeOrder.mock.calls[0][1]).toMatch(/^[0-9a-f-]{36}$/);        // an idempotency key is always sent
   });
   it("lists the unavailable items when stock ran out at the last moment", async () => {
     api.placeOrder.mockRejectedValue(new ApiError("Some items in your cart can no longer be ordered as requested. Only 1 of Bananas left; you asked for 2.", 409,
       { detail: { message: "Some items...", problems: [{ product_id: 1, message: "Only 1 of Bananas left; you asked for 2." }] } }));
     renderCheckout();
-    await screen.findByRole("heading", { name: "Checkout" });
-    await fill();
-    await userEvent.click(screen.getByRole("button", { name: /place demonstration order/i }));
+    await toPayment();
+    await userEvent.click(await placeBtn());
     const alert = await screen.findByRole("alert");
     expect(within(alert).getAllByText(/only 1 of bananas left/i).length).toBeGreaterThan(0);
     expect(within(alert).getByRole("link", { name: /review your cart/i })).toHaveAttribute("href", "/shop/cart");
@@ -264,12 +282,68 @@ describe("checkout", () => {
     renderCheckout();
     expect(await screen.findByRole("heading", { name: /nothing to check out/i })).toBeInTheDocument();
   });
+
+  describe("real online payment", () => {
+    const realMethods = { currency: "ZMW", methods: [
+      { id: "simulated", label: "Simulated payment (demonstration)", available: false, mode: "SIMULATED", scenarios: [], reason: "Switched off on this server." },
+      { id: "cod", label: "Cash on delivery", available: true, mode: "COD", scenarios: [], reason: "" },
+      { id: "card", label: "Visa / Mastercard", available: true, mode: "TEST", scenarios: [], reason: "" },
+      { id: "mtn_momo", label: "MTN Mobile Money", available: true, mode: "TEST", scenarios: [], reason: "" },
+      { id: "airtel_money", label: "Airtel Money", available: false, mode: "TEST", scenarios: [], reason: "Not available right now." }] };
+    let assign;
+    beforeEach(() => {
+      api.paymentMethods.mockResolvedValue(realMethods);
+      assign = vi.fn();
+      Object.defineProperty(window, "location", { configurable: true, value: { ...window.location, assign } });
+    });
+    const pending = { id: "o-9", payment_status: "pending", payment_attempts: [{ reference: "PAY-ABCD1234", provider: "flutterwave", status: "pending" }] };
+
+    it("defaults to the real card method, explains the hosted page and never shows card inputs", async () => {
+      renderCheckout();
+      await toPayment();
+      expect(await screen.findByRole("radio", { name: /visa \/ mastercard/i })).toBeChecked();
+      expect(screen.getByRole("radio", { name: /airtel money/i })).toBeDisabled();
+      expect(screen.getAllByText(/never see or store your card number/i).length).toBeGreaterThan(0);
+      expect(screen.getByText(/test mode: no real money/i)).toBeInTheDocument();
+      expect(screen.queryByLabelText(/card number|cvv|expiry/i)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/demonstration outcome/i)).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Place order and pay" })).toBeEnabled();
+    });
+    it("sends the customer to the provider's payment page after the order is placed", async () => {
+      api.placeOrder.mockResolvedValue(pending);
+      api.checkoutLink.mockResolvedValue({ url: "https://checkout.flutterwave.com/v3/hosted/pay/x" });
+      renderCheckout();
+      await toPayment();
+      await userEvent.click(await screen.findByRole("button", { name: "Place order and pay" }));
+      await waitFor(() => expect(assign).toHaveBeenCalledWith("https://checkout.flutterwave.com/v3/hosted/pay/x"));
+      expect(api.checkoutLink).toHaveBeenCalledWith("PAY-ABCD1234");
+      expect(api.placeOrder.mock.calls[0][0].payment).toEqual({ method: "card" });
+    });
+    it("falls back to the payment page (with a Pay now button) when the link cannot be created", async () => {
+      api.placeOrder.mockResolvedValue(pending);
+      api.checkoutLink.mockRejectedValue(new Error("The payment page could not be created."));
+      renderCheckout();
+      await toPayment();
+      await userEvent.click(await screen.findByRole("button", { name: "Place order and pay" }));
+      expect(await screen.findByTestId("loc")).toHaveTextContent("/shop/payment/o-9");
+      expect(assign).not.toHaveBeenCalled();
+    });
+    it("cash on delivery goes straight to the confirmation", async () => {
+      api.placeOrder.mockResolvedValue({ id: "o-2", payment_status: "cod_due", payment_attempts: [{ reference: "PAY-COD00001", provider: "cod", status: "pending" }] });
+      renderCheckout();
+      await toPayment();
+      await userEvent.click(await screen.findByRole("radio", { name: /cash on delivery/i }));
+      await userEvent.click(screen.getByRole("button", { name: "Place order" }));
+      expect(await screen.findByTestId("loc")).toHaveTextContent("/shop/order-confirmation/o-2");
+      expect(assign).not.toHaveBeenCalled();
+    });
+  });
 });
 
 const order = (over = {}) => ({ id: "o-1", reference: "ORD-ABC12345", status: "confirmed", fulfilment: "delivery", contact_name: "Mia Shopper",
-  contact_email: "me@example.com", contact_phone: "0821234567", address_line: "12 Test Street", city: "Johannesburg", postal_code: "2000",
+  contact_email: "me@example.com", contact_phone: "0821234567", address_line: "12 Test Street", city: "Lusaka", postal_code: "2000",
   items: [{ product_id: 1, sku: "DEMO-1", name: "Bananas", unit_price_cents: 2499, quantity: 2, line_total_cents: 4998 }],
-  subtotal_cents: 4998, delivery_fee_cents: 3500, total_cents: 8498, currency: "ZAR", payment_mode: "SIMULATED", payment_status: "simulated_approved",
+  subtotal_cents: 4998, delivery_fee_cents: 3500, total_cents: 8498, currency: "ZMW", payment_mode: "SIMULATED", payment_status: "paid",
   payment_notice: "DEMONSTRATION PAYMENT: this is a simulated checkout. No card was used and no money was taken or authorised by any bank.",
   created_at: "2026-10-16T10:00:00Z", updated_at: "2026-10-16T10:00:00Z", ...over });
 

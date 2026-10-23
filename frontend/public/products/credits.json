@@ -1,0 +1,56 @@
+{
+ "img-bananas.jpg": {
+  "title": "File:Bunch of bananas on sale.jpg",
+  "license": "CC0",
+  "author": "Wilfredor",
+  "page": "https://commons.wikimedia.org/wiki/File:Bunch_of_bananas_on_sale.jpg"
+ },
+ "img-apples.jpg": {
+  "title": "File:Red Apple.jpg",
+  "license": "CC BY 2.0",
+  "author": "Abhijit Tembhekar from Mumbai, India",
+  "page": "https://commons.wikimedia.org/wiki/File:Red_Apple.jpg"
+ },
+ "img-tomatoes.jpg": {
+  "title": "File:Fresh red tomatoes.jpg",
+  "license": "CC BY-SA 4.0",
+  "author": "Selimee",
+  "page": "https://commons.wikimedia.org/wiki/File:Fresh_red_tomatoes.jpg"
+ },
+ "img-eggs.jpg": {
+  "title": "File:Egg cartons with chicken eggs 03.jpg",
+  "license": "CC BY-SA 4.0",
+  "author": "Krzysztof Golik",
+  "page": "https://commons.wikimedia.org/wiki/File:Egg_cartons_with_chicken_eggs_03.jpg"
+ },
+ "img-butter.jpg": {
+  "title": "File:Block of butter in butter dish.jpg",
+  "license": "CC BY 4.0",
+  "author": "Qwertyxp2000",
+  "page": "https://commons.wikimedia.org/wiki/File:Block_of_butter_in_butter_dish.jpg"
+ },
+ "img-toilet-paper.jpg": {
+  "title": "File:Stacked rolls of toilet paper, Tunnicliff's Tavern.jpg",
+  "license": "CC BY-SA 4.0",
+  "author": "Ser Amantio di Nicolao",
+  "page": "https://commons.wikimedia.org/wiki/File:Stacked_rolls_of_toilet_paper,_Tunnicliff's_Tavern.jpg"
+ },
+ "img-laundry-powder.jpg": {
+  "title": "File:Laundry detergent 1.jpg",
+  "license": "CC BY-SA 4.0",
+  "author": "MartinMerinsky",
+  "page": "https://commons.wikimedia.org/wiki/File:Laundry_detergent_1.jpg"
+ },
+ "img-beef-mince.jpg": {
+  "title": "File:Hackfleisch-1.jpg",
+  "license": "CC BY-SA 3.0",
+  "author": "Rainer Zenz (assumed, per Wikimedia Commons)",
+  "page": "https://commons.wikimedia.org/wiki/File:Hackfleisch-1.jpg"
+ },
+ "img-whole-chicken.jpg": {
+  "title": "File:Whole raw chicken - Japan Dec 22 2019.jpeg",
+  "license": "CC BY 4.0",
+  "author": "Nesnad",
+  "page": "https://commons.wikimedia.org/wiki/File:Whole_raw_chicken_-_Japan_Dec_22_2019.jpeg"
+ }
+}

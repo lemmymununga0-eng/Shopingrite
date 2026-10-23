@@ -9,7 +9,7 @@ def test_cart_requires_sign_in(client):
 
 def test_empty_cart(client):
     d = client.get("/cart", headers=cust()).json()
-    assert d["items"] == [] and d["subtotal_cents"] == 0 and d["delivery_fee_cents"] == 0 and d["currency"] == "ZAR"
+    assert d["items"] == [] and d["subtotal_cents"] == 0 and d["delivery_fee_cents"] == 0 and d["currency"] == "ZMW"
 
 
 def test_add_merge_update_remove_and_totals(client):

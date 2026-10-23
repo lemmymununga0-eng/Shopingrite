@@ -3,9 +3,11 @@ from fastapi import HTTPException
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
-from ..db.models import Category, Inventory, Product
+from ..db.models import (Category, Inventory, OrderItem, Product, active_offer_sql, effective_price_cents,
+                         offer_is_active)
 from ..schemas.store import InventoryOut, ProductOut
 from .audit import record_audit
+from .stock_ledger import record_movement
 
 
 def stock_status(available: int, reorder_threshold: int) -> str:
@@ -18,10 +20,15 @@ def product_out(p: Product) -> ProductOut:
     inv = p.inventory
     available = inv.available_quantity if inv else 0
     threshold = inv.reorder_threshold if inv else 0
-    effective = p.offer_price_cents if p.offer_price_cents is not None else p.price_cents
+    offer = p.offer_price_cents if offer_is_active(p) else None
     return ProductOut(id=p.id, sku=p.sku, name=p.name, description=p.description, category_slug=p.category.slug,
-                      category_name=p.category.name, price_cents=p.price_cents, offer_price_cents=p.offer_price_cents,
-                      effective_price_cents=effective, currency=p.currency, unit=p.unit, image_ref=p.image_ref,
+                      category_name=p.category.name, price_cents=p.price_cents, offer_price_cents=offer,
+                      effective_price_cents=effective_price_cents(p), currency=p.currency, unit=p.unit,
+                      image_ref=p.image_ref, image_alt=p.image_alt or p.name, image_status=p.image_status,
+                      image_source=p.image_source, image_license=p.image_license, brand=p.brand, pack_size=p.pack_size,
+                      price_status=p.price_status, price_source_name=p.price_source_name,
+                      price_source_url=p.price_source_url, price_source_type=p.price_source_type,
+                      price_checked_on=p.price_checked_on, offer_ends_on=p.offer_ends_on if offer is not None else None,
                       is_featured=p.is_featured, is_demo=p.is_demo, stock_status=stock_status(available, threshold),
                       available_quantity=max(available, 0))
 
@@ -30,34 +37,39 @@ def _like(text: str) -> str:
     return "%" + text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
 
 
-SORTS = {
-    "name": Product.name.asc(), "price_asc": func.coalesce(Product.offer_price_cents, Product.price_cents).asc(),
-    "price_desc": func.coalesce(Product.offer_price_cents, Product.price_cents).desc(), "newest": Product.id.desc(),
-}
+def _price():
+    return func.coalesce(active_offer_sql(), Product.price_cents)
+
+
+def _sorts():
+    sold = (select(func.coalesce(func.sum(OrderItem.quantity), 0)).where(OrderItem.product_id == Product.id)
+            .correlate(Product).scalar_subquery())
+    return {"name": Product.name.asc(), "price_asc": _price().asc(), "price_desc": _price().desc(),
+            "newest": Product.id.desc(), "popular": sold.desc()}
 
 
 def list_products(session: Session, *, search=None, category=None, min_price_cents=None, max_price_cents=None,
                   sort="name", in_stock_only=False, on_offer=False, featured=False, page=1, page_size=12):
     q = select(Product).where(Product.is_active.is_(True))
     if search:
-        q = q.where(or_(Product.name.ilike(_like(search), escape="\\"), Product.description.ilike(_like(search), escape="\\"),
-                        Product.sku.ilike(_like(search), escape="\\")))
+        q = q.where(or_(Product.name.ilike(_like(search), escape="\\"), Product.brand.ilike(_like(search), escape="\\"),
+                        Product.description.ilike(_like(search), escape="\\"), Product.sku.ilike(_like(search), escape="\\")))
     if category:
         q = q.join(Category).where(Category.slug == category)
-    price = func.coalesce(Product.offer_price_cents, Product.price_cents)
+    price = _price()
     if min_price_cents is not None:
         q = q.where(price >= min_price_cents)
     if max_price_cents is not None:
         q = q.where(price <= max_price_cents)
     if on_offer:
-        q = q.where(Product.offer_price_cents.is_not(None))
+        q = q.where(active_offer_sql().is_not(None))
     if featured:
         q = q.where(Product.is_featured.is_(True))
     if in_stock_only:
         q = q.join(Inventory, Inventory.product_id == Product.id).where(Inventory.available_quantity > 0)
     total = session.scalar(select(func.count()).select_from(q.subquery()))
     rows = session.scalars(q.options(joinedload(Product.category), joinedload(Product.inventory))
-                           .order_by(SORTS.get(sort, SORTS["name"]), Product.id)
+                           .order_by(_sorts().get(sort, Product.name.asc()), Product.id)
                            .limit(page_size).offset((page - 1) * page_size)).unique().all()
     return [product_out(p) for p in rows], total
 
@@ -120,6 +132,8 @@ def adjust_inventory(session: Session, user, product_id: int, *, set_available, 
         new_available = inv.available_quantity + delta
     if new_available < 0:
         raise HTTPException(422, "Stock cannot go below zero")
+    record_movement(session, product_id=product_id, delta_available=new_available - inv.available_quantity,
+                    reason="admin_adjustment", actor_id=getattr(user, "id", None), note=reason or "")
     inv.available_quantity = new_available
     if reorder_threshold is not None:
         inv.reorder_threshold = reorder_threshold

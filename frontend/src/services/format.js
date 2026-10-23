@@ -1,8 +1,12 @@
-export const money = n => new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" }).format(Number(n || 0));
-/** Money from integer minor units (cents) in the currency the API reports. Never assumes a currency. */
-export const moneyC = (cents, currency = "ZAR") => {
-  try { return new Intl.NumberFormat("en-ZA", { style: "currency", currency }).format(Number(cents || 0) / 100); }
-  catch { return `${currency} ${(Number(cents || 0) / 100).toFixed(2)}`; }
+const num = n => new Intl.NumberFormat("en-ZM", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n || 0));
+/** Amount in major units. Zambian kwacha is written "K1,234.50". */
+export const money = n => `K${num(n)}`;
+/** Money from integer minor units (ngwee/cents) in the currency the API reports. Never assumes another currency. */
+export const moneyC = (cents, currency = "ZMW") => {
+  const major = Number(cents || 0) / 100;
+  if (currency === "ZMW") return `K${num(major)}`;
+  try { return new Intl.NumberFormat("en-ZM", { style: "currency", currency }).format(major); }
+  catch { return `${currency} ${major.toFixed(2)}`; }
 };
 export const pct = p => `${(Number(p) * 100).toFixed(1)}%`;
 export const when = iso => (iso ? new Date(iso).toLocaleString() : "—");

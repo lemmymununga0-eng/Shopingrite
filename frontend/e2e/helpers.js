@@ -27,7 +27,37 @@ export function backendEnv() {
     PREDICT_RATE_LIMIT_PER_MIN: "1000", CHECKOUT_RATE_LIMIT_PER_MIN: "1000", CART_RATE_LIMIT_PER_MIN: "1000",
     SCAMWATCH_RATE_LIMIT_PER_MIN: "1000", LOGIN_RATE_LIMIT_PER_MIN: "1000",
     CORS_ORIGINS: "http://127.0.0.1:5199,http://localhost:5199", PYTHONUNBUFFERED: "1",
+    // the specs expect the small legacy catalogue (DEMO-* SKUs); the Zambian catalogue is covered by backend tests
+    SEED_LEGACY_DEMO: "true", SEED_ZM_CATALOGUE: "false", STORE_IS_DEMO: "true", COD_ENABLED: "true",
+    // real-payment journeys run against a local stand-in for Flutterwave (e2e/fake-flutterwave.mjs)
+    FLW_SECRET_KEY: FAKE_FLW.key, FLW_WEBHOOK_HASH: FAKE_FLW.hash, FLW_BASE_URL: `${FAKE_FLW.url}/v3`, FRONTEND_URL: WEB,
   });
+}
+
+export const FAKE_FLW = { url: "http://127.0.0.1:8798", key: "FLWSECK_TEST-e2e", hash: "e2e-hook-hash" };
+const FAKE_PID = path.join(here, ".fake-flw.pid");
+
+export async function startFakeFlutterwave() {
+  const child = spawn(process.execPath, [path.join(here, "fake-flutterwave.mjs")], {
+    env: { ...process.env, FAKE_FLW_KEY: FAKE_FLW.key, FAKE_FLW_WEBHOOK_HASH: FAKE_FLW.hash }, stdio: "ignore", windowsHide: true });
+  writeFileSync(FAKE_PID, String(child.pid));
+  child.unref();
+  const end = Date.now() + 15_000;
+  while (Date.now() < end) {
+    try { if ((await fetch(`${FAKE_FLW.url}/health`)).ok) return; } catch { /* not up yet */ }
+    await new Promise(r => setTimeout(r, 200));
+  }
+  throw new Error("fake Flutterwave did not start");
+}
+
+export function stopFakeFlutterwave() {
+  if (!existsSync(FAKE_PID)) return;
+  const pid = Number(readFileSync(FAKE_PID, "utf8"));
+  try {
+    if (process.platform === "win32") spawnSync("taskkill", ["/PID", String(pid), "/T", "/F"], { stdio: "ignore" });
+    else process.kill(pid, "SIGTERM");
+  } catch { /* already gone */ }
+  rmSync(FAKE_PID, { force: true });
 }
 
 export function resetE2eData() {
@@ -83,6 +113,12 @@ export async function signInAs(page, label) {
   await page.getByRole("button", { name: label }).click();
   await page.getByRole("button", { name: "Login" }).click();
   await page.waitForFunction(() => !!sessionStorage.getItem("fg_local_session"));   // sign-in finished
+}
+
+/** Remove everything from the signed-in customer's cart, so a test starts from "nothing in the cart" (product cards show a stepper otherwise). */
+export async function emptyCart(page) {
+  const cart = await api(page, "GET", "/cart");
+  for (const line of cart.json?.items || []) await api(page, "DELETE", `/cart/items/${line.item_id}`);
 }
 
 export const token = page => page.evaluate(() => JSON.parse(sessionStorage.getItem("fg_local_session")).token);

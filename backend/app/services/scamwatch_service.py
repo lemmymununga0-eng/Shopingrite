@@ -213,6 +213,32 @@ class MockProvider:
                               simulated=True)
 
 
+class MlUrlProvider:
+    """The trained URL-text phishing model (PhiUSIIL). Opt-in via SCAMWATCH_PROVIDERS=...,ml_url.
+
+    It can only raise suspicion. It never says a site is safe ("no_known_threat") and never "malicious": a statistical estimate from
+    the URL text alone is not a threat-intelligence listing. When the model is not ready it is skipped, with no score invented."""
+    name = "ml_url"
+
+    def __init__(self, ml):
+        self.ml = ml
+
+    def check(self, normalized: str, domain: str, notes: list[str]) -> ProviderResult:
+        src = "URL-text phishing model"
+        res = self.ml.predict("url_phishing", {"url": normalized}) if self.ml is not None else {"status": "model_unavailable"}
+        if res["status"] == "model_unavailable":
+            return ProviderResult(self.name, "skipped", "inconclusive", "The URL model is not trained or not loaded.", src)
+        if res["status"] != "ok":
+            return ProviderResult(self.name, "error", "inconclusive", "The URL model could not score this address.", src)
+        if res["flagged"]:
+            return ProviderResult(self.name, "ok", "suspicious",
+                                  f"The address text resembles phishing links in the training data (estimate {res['probability']:.0%}, "
+                                  f"model {res['model_version']}). This is an estimate from the URL text only.", src,
+                                  signals=["URL pattern resembles known phishing links"])
+        return ProviderResult(self.name, "ok", "inconclusive",
+                              "The address text does not resemble phishing links in the training data. That does not mean the site is safe.", src)
+
+
 def build_providers(s: Settings) -> list:
     out = []
     for name in s.provider_list:
@@ -237,6 +263,9 @@ def provider_status(s: Settings) -> list[dict]:
             rows.append({"name": "safebrowsing", "configured": bool(s.safe_browsing_api_key), "kind": "external lookup",
                          "live_tested": False,
                          "note": "Needs SAFE_BROWSING_API_KEY. Live calls have not been verified in this project."})
+        elif name == "ml_url":
+            rows.append({"name": "ml_url", "configured": True, "kind": "trained model (URL text only)", "live_tested": False,
+                         "note": "Skipped unless the url_phishing model is trained and ready. Can raise suspicion, never clears a site."})
         elif name == "mock":
             rows.append({"name": "mock", "configured": s.environment.lower() != "production", "kind": "SIMULATED (tests/demos)",
                          "live_tested": False, "note": "Returns scripted verdicts. Not a real threat feed."})

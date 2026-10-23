@@ -10,7 +10,7 @@ import json
 TARGET = "is_fraud"
 
 PAYMENT_METHODS = ["Card", "Bank Transfer", "Mobile Money"]
-BRANCHES = ["Online", "Johannesburg CBD", "Cape Town V&A", "Durban North", "Pretoria Central"]
+BRANCHES = ["Online", "Lusaka CBD", "Kitwe", "Ndola", "Livingstone"]
 
 NUMERIC_FEATURES = ["amount", "hour", "failed_attempts", "new_device", "international", "customer_avg_spend"]
 CATEGORICAL_FEATURES = ["payment_method", "branch"]

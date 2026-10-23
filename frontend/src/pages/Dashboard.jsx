@@ -3,6 +3,8 @@ import { BellRing, CreditCard, Percent, PlusCircle, RefreshCw, ShieldAlert, Shie
 import { Link } from "react-router-dom";
 import StatCard from "../components/StatCard";
 import OperationsOverview from "../components/OperationsOverview";
+import StoreOverview from "../components/StoreOverview";
+import FraudModelPanel from "../components/FraudModelPanel";
 import { ActivityChart, RiskChart, SplitChart } from "../components/charts";
 import { EmptyState, ErrorState, ModelBanner, PageHeader, RiskBadge, Skeleton, TransactionTable } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
@@ -44,7 +46,9 @@ export default function Dashboard() {
         <button type="button" className="btn btn-secondary" onClick={load} disabled={loading}><RefreshCw size={15} className={loading ? "spin" : ""}/> Refresh</button>
       </>}/>
     <ModelBanner info={model}/>
+    <StoreOverview days={days}/>
     <OperationsOverview days={days}/>
+    <FraudModelPanel/>
     {error && !stats ? <ErrorState error={error} onRetry={load}/> : loading && !stats ? <>
       <div className="cards-4"><Skeleton className="skeleton-card" count={4}/></div><Skeleton className="skeleton-chart" count={1}/></> : stats && <>
       <div className="cards-4">

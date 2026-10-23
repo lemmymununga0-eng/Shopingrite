@@ -7,7 +7,7 @@ import { api } from "../services/api";
 import { money, pct } from "../services/format";
 
 export const METHODS = ["Card", "Bank Transfer", "Mobile Money"];
-export const BRANCHES = ["Online", "Johannesburg CBD", "Cape Town V&A", "Durban North", "Pretoria Central"];
+export const BRANCHES = ["Online", "Lusaka CBD", "Kitwe", "Ndola", "Livingstone"];
 
 const newRef = () => `TX-${Date.now().toString(36).toUpperCase()}`;
 const initial = () => ({ transaction_reference: newRef(), amount: "", payment_method: getPrefs().defaultMethod, hour: String(new Date().getHours()),
@@ -67,14 +67,14 @@ export default function Transaction() {
     <form onSubmit={submit} noValidate>
       <section className="panel"><div className="panel-heading"><h2>Transaction details</h2></div><div className="form-grid">
         {field("transaction_reference", "Transaction Reference", <input {...ctl("transaction_reference")}/>)}
-        {field("amount", "Amount (ZAR)", <input {...ctl("amount", { type: "number", step: "0.01", min: "0.01", placeholder: "Enter amount" })}/>)}
+        {field("amount", "Amount (ZMW)", <input {...ctl("amount", { type: "number", step: "0.01", min: "0.01", placeholder: "Enter amount" })}/>)}
         {field("payment_method", "Payment Method", <select {...ctl("payment_method")}>{METHODS.map(m => <option key={m}>{m}</option>)}</select>)}
         {field("branch", "Merchant / Branch", <select {...ctl("branch")}>{BRANCHES.map(b => <option key={b}>{b}</option>)}</select>)}
       </div></section>
       <section className="panel" style={{ marginTop: 16 }}><div className="panel-heading"><h2>Additional transaction information</h2></div><div className="form-grid">
         {field("hour", "Transaction Hour (0–23)", <input {...ctl("hour", { type: "number", min: "0", max: "23" })}/>)}
         {field("failed_attempts", "Failed Attempts", <input {...ctl("failed_attempts", { type: "number", min: "0", max: "10" })}/>)}
-        {field("customer_avg_spend", "Customer Average Spend (ZAR)", <input {...ctl("customer_avg_spend", { type: "number", step: "0.01", min: "0", placeholder: "Typical spend per transaction" })}/>)}
+        {field("customer_avg_spend", "Customer Average Spend (ZMW)", <input {...ctl("customer_avg_spend", { type: "number", step: "0.01", min: "0", placeholder: "Typical spend per transaction" })}/>)}
         {field("new_device", "New Device?", <select {...ctl("new_device")}><option value="no">No</option><option value="yes">Yes</option></select>)}
         {field("international", "International Transaction?", <select {...ctl("international")}><option value="no">No</option><option value="yes">Yes</option></select>)}
       </div>

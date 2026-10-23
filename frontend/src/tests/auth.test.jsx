@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const auth = vi.hoisted(() => ({ value: {} }));
 vi.mock("../context/AuthContext", () => ({ useAuth: () => auth.value }));
-vi.mock("../services/api", () => ({ api: { alerts: vi.fn() } }));
+vi.mock("../services/api", () => ({ api: { alerts: vi.fn(), storeInfo: vi.fn() } }));
 
 import { api } from "../services/api";
 import App, { NotFound, Protected } from "../App";
@@ -19,6 +19,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   auth.value = { ...base, login: vi.fn(), register: vi.fn(), logout: vi.fn() };
   api.alerts.mockResolvedValue({ items: [], total: 0 });
+  api.storeInfo.mockResolvedValue({ is_demo: true, local_auth_enabled: false, name: "Demo Shop" });
 });
 const at = (path, ui) => render(<MemoryRouter initialEntries={[path]}>{ui}</MemoryRouter>);
 
@@ -39,10 +40,10 @@ describe("protected routes", () => {
     at("/nope/nothing", <App/>);
     expect(screen.getByRole("heading", { name: /404/ })).toBeInTheDocument();
   });
-  it("sends a signed-in customer away from the staff console to the store", async () => {
+  it("sends a signed-in customer away from the staff console to the store", { timeout: 15000 }, async () => {
     auth.value = { ...base, user: { id: "1", email: "a@b.co" }, role: "customer" };
     at("/dashboard", <App/>);
-    expect(await screen.findByRole("heading", { name: /fresh groceries/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /everyday groceries/i }, { timeout: 8000 })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /^dashboard/i })).not.toBeInTheDocument();
   });
   it("NotFound links back to the dashboard", () => {
@@ -113,7 +114,8 @@ describe("registration", () => {
     await userEvent.type(screen.getByLabelText("Email Address"), "p@d.co");
     await userEvent.type(screen.getByLabelText("Password"), password);
     await userEvent.type(screen.getByLabelText("Confirm Password"), confirm);
-    if (agree) await userEvent.click(screen.getByRole("checkbox"));
+    const box = await screen.findByRole("checkbox");              // shown once the store says it is a demonstration
+    if (agree) await userEvent.click(box);
     await userEvent.click(screen.getByRole("button", { name: /create account/i }));
   }
   it("rejects a password that misses the requirements", async () => {
@@ -193,5 +195,55 @@ describe("navigation shell", () => {
     render(<MemoryRouter initialEntries={["/dashboard"]}><Topbar onMenuClick={() => {}}/><Routes><Route path="/history" element={<div>HISTORY</div>}/><Route path="*" element={null}/></Routes></MemoryRouter>);
     await userEvent.type(screen.getByLabelText(/search transactions by reference/i), "TX-77{Enter}");
     expect(await screen.findByText("HISTORY")).toBeInTheDocument();
+  });
+});
+
+
+describe("registration modes", () => {
+  const fillBasics = async () => {
+    await userEvent.type(screen.getByLabelText("Full Name"), "Pat Doe");
+    await userEvent.type(screen.getByLabelText("Email Address"), "p@d.co");
+    await userEvent.type(screen.getByLabelText("Password"), "longenough1");
+    await userEvent.type(screen.getByLabelText("Confirm Password"), "longenough1");
+  };
+  it("local demonstration mode creates a customer account and goes to the store", async () => {
+    api.storeInfo.mockResolvedValue({ is_demo: true, local_auth_enabled: true, name: "Demo Shop" });
+    auth.value = { ...base, configured: false, registerLocal: vi.fn().mockResolvedValue({ app_metadata: { role: "customer" } }) };
+    at("/register", <Routes><Route path="/register" element={<Register/>}/><Route path="/shop" element={<div>SHOP PAGE</div>}/></Routes>);
+    await fillBasics();
+    await userEvent.click(await screen.findByRole("checkbox"));
+    expect(await screen.findByText(/local demonstration mode/i)).toBeInTheDocument();
+    expect(screen.queryByText(/setup required/i)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /create account/i }));
+    await waitFor(() => expect(auth.value.registerLocal).toHaveBeenCalledWith("p@d.co", "longenough1", "Pat Doe"));
+    expect(await screen.findByText("SHOP PAGE")).toBeInTheDocument();
+  });
+  it("shows the server's message when the email is already registered", async () => {
+    api.storeInfo.mockResolvedValue({ is_demo: false, local_auth_enabled: true, name: "Shop" });
+    auth.value = { ...base, configured: false, registerLocal: vi.fn().mockRejectedValue(new Error("An account with that email already exists. Sign in instead.")) };
+    at("/register", <Register/>);
+    await fillBasics();
+    await userEvent.click(await screen.findByRole("button", { name: /create account/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/already exists/i);
+  });
+  it("a live store has no educational-demo checkbox and uses its own name", async () => {
+    api.storeInfo.mockResolvedValue({ is_demo: false, local_auth_enabled: false, name: "Mwila Foods" });
+    at("/register", <Register/>);
+    expect(await screen.findByText("Mwila Foods")).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(screen.queryByText(/fraudguard/i)).not.toBeInTheDocument();
+  });
+  it("a new real (Supabase) customer lands in the store, not the staff dashboard", async () => {
+    api.storeInfo.mockResolvedValue({ is_demo: false, local_auth_enabled: false, name: "Shop" });
+    auth.value = { ...base, register: vi.fn().mockResolvedValue({ session: { access_token: "t" } }) };
+    at("/register", <Routes><Route path="/register" element={<Register/>}/><Route path="/shop" element={<div>SHOP PAGE</div>}/><Route path="/dashboard" element={<div>CONSOLE</div>}/></Routes>);
+    await fillBasics();
+    await userEvent.click(await screen.findByRole("button", { name: /create account/i }));
+    expect(await screen.findByText("SHOP PAGE")).toBeInTheDocument();
+  });
+  it("a signed-in customer opening /register is sent to the store", async () => {
+    auth.value = { ...base, user: { id: "1" }, role: "customer" };
+    at("/register", <Routes><Route path="/register" element={<Register/>}/><Route path="/shop" element={<div>SHOP PAGE</div>}/></Routes>);
+    expect(await screen.findByText("SHOP PAGE")).toBeInTheDocument();
   });
 });

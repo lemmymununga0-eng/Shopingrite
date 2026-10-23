@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, CreditCard, History, Bell, FlaskConical, UserRound, Settings, Info, ShieldCheck, PlusCircle, LogOut, FolderSearch, Globe, Activity, Boxes, BarChart3, Users, ScrollText, Plug, Store } from "lucide-react";
+import { LayoutDashboard, CreditCard, History, Bell, FlaskConical, UserRound, Settings, Info, ShieldCheck, PlusCircle, LogOut, FolderSearch, Globe, Activity, Boxes, BarChart3, Users, ScrollText, Plug, Store, ShoppingBag, Tags } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { BRAND } from "../services/format";
 
@@ -13,7 +13,9 @@ const links = [
   ["/alerts", "Fraud Alerts", Bell, STAFF],
   ["/scamwatch", "ScamWatch", Globe, STAFF],
   ["/security", "Security Monitor", Activity, SECURITY],
-  ["/inventory", "Inventory & Orders", Boxes, STAFF],
+  ["/orders", "Orders & Risk", ShoppingBag, STAFF],
+  ["/inventory", "Inventory", Boxes, STAFF],
+  ["/products", "Products", Tags, ["admin"]],
   ["/reports", "Reports", BarChart3, STAFF],
   ["/payment", "New Payment", PlusCircle, STAFF],
   ["/history", "Transaction History", History, STAFF],
